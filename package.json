@@ -1,0 +1,33 @@
+{
+  "name": "flash-campaign",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Flash Campaign — creador de anuncios y campanas digitales para Google Search, Google Display y Meta.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && tsc -p tsconfig.functions.json --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "typecheck": "tsc -b && tsc -p tsconfig.functions.json --noEmit",
+    "lint": "tsc -b",
+    "dev:cf": "npm run build && wrangler pages dev dist --port 8788 --ip 127.0.0.1 --kv FLASH_KV",
+    "deploy": "npm run build && wrangler pages deploy dist"
+  },
+  "dependencies": {
+    "@fontsource/roboto": "^5.2.5",
+    "fflate": "^0.8.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260818.1",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "playwright": "^1.62.1",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.11",
+    "wrangler": "^4.123.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "usuarios": [
+    {
+      "id": "usr_admin",
+      "email": "hola@andresgamonal.com",
+      "nombre": "Andrés Gamonal",
+      "rol": "admin",
+      "activo": true,
+      "zonaHoraria": "America/Santiago",
+      "correoContacto": "hola@andresgamonal.com",
+      "creadoEn": "2026-01-01T00:00:00.000Z",
+      "hash": "pbkdf2$150000$IVbHOJEnq+wx8/pMvkWU5Q==$L4QtUbXFXSTpaSq5Ojnvtp8KjoBX7ZKEewEPnxTtiyc="
+    }
+  ]
+}

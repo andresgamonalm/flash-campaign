@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "imagenes": [
+    {
+      "id": "proy_zurich_1",
+      "nombre": "Referencia Zurich 1",
+      "src": "/biblioteca/zurich-referencias/1-Ref-Zurich.png",
+      "ancho": 1016,
+      "alto": 1086,
+      "peso": 219870,
+      "propietarioId": null,
+      "origen": "proyecto",
+      "etiquetas": [
+        "zurich",
+        "referencia",
+        "display"
+      ],
+      "creadoEn": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "proy_zurich_2",
+      "nombre": "Referencia Zurich 2",
+      "src": "/biblioteca/zurich-referencias/2-Ref-Zurich.png",
+      "ancho": 722,
+      "alto": 780,
+      "peso": 699235,
+      "propietarioId": null,
+      "origen": "proyecto",
+      "etiquetas": [
+        "zurich",
+        "referencia",
+        "display"
+      ],
+      "creadoEn": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "proy_zurich_3",
+      "nombre": "Referencia Zurich 3",
+      "src": "/biblioteca/zurich-referencias/3-Ref-Zurich.png",
+      "ancho": 1956,
+      "alto": 1086,
+      "peso": 700462,
+      "propietarioId": null,
+      "origen": "proyecto",
+      "etiquetas": [
+        "zurich",
+        "referencia",
+        "display"
+      ],
+      "creadoEn": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "proy_zurich_4",
+      "nombre": "Referencia Zurich 4",
+      "src": "/biblioteca/zurich-referencias/4-Ref-Zurich.png",
+      "ancho": 900,
+      "alto": 918,
+      "peso": 486224,
+      "propietarioId": null,
+      "origen": "proyecto",
+      "etiquetas": [
+        "zurich",
+        "referencia",
+        "display"
+      ],
+      "creadoEn": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "proy_zurich_5",
+      "nombre": "Referencia Zurich 5",
+      "src": "/biblioteca/zurich-referencias/5-Ref-Zurich.png",
+      "ancho": 854,
+      "alto": 812,
+      "peso": 467385,
+      "propietarioId": null,
+      "origen": "proyecto",
+      "etiquetas": [
+        "zurich",
+        "referencia",
+        "display"
+      ],
+      "creadoEn": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "proy_zurich_6",
+      "nombre": "Referencia Zurich 6",
+      "src": "/biblioteca/zurich-referencias/6-Ref-Zurich.png",
+      "ancho": 862,
+      "alto": 810,
+      "peso": 511273,
+      "propietarioId": null,
+      "origen": "proyecto",
+      "etiquetas": [
+        "zurich",
+        "referencia",
+        "display"
+      ],
+      "creadoEn": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "proy_zurich_7",
+      "nombre": "Referencia Zurich 7",
+      "src": "/biblioteca/zurich-referencias/7-Ref-Zurich.png",
+      "ancho": 862,
+      "alto": 808,
+      "peso": 833526,
+      "propietarioId": null,
+      "origen": "proyecto",
+      "etiquetas": [
+        "zurich",
+        "referencia",
+        "display"
+      ],
+      "creadoEn": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "proy_zurich_8",
+      "nombre": "Referencia Zurich 8",
+      "src": "/biblioteca/zurich-referencias/8-Ref-Zurich.png",
+      "ancho": 920,
+      "alto": 480,
+      "peso": 510044,
+      "propietarioId": null,
+      "origen": "proyecto",
+      "etiquetas": [
+        "zurich",
+        "referencia",
+        "display"
+      ],
+      "creadoEn": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "proy_zurich_9",
+      "nombre": "Referencia Zurich 9",
+      "src": "/biblioteca/zurich-referencias/9-Ref-Zurich.png",
+      "ancho": 858,
+      "alto": 864,
+      "peso": 169482,
+      "propietarioId": null,
+      "origen": "proyecto",
+      "etiquetas": [
+        "zurich",
+        "referencia",
+        "display"
+      ],
+      "creadoEn": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "proy_zurich_10",
+      "nombre": "Referencia Zurich 10",
+      "src": "/biblioteca/zurich-referencias/10-Ref-Zurich.png",
+      "ancho": 1162,
+      "alto": 598,
+      "peso": 146836,
+      "propietarioId": null,
+      "origen": "proyecto",
+      "etiquetas": [
+        "zurich",
+        "referencia",
+        "display"
+      ],
+      "creadoEn": "2026-01-01T00:00:00.000Z"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+# Configuración de Cloudflare Pages para Flash Campaign.
+#
+# Las variables sensibles (GEMINI_API_KEY, SESSION_SECRET) NO se escriben aquí:
+# se cargan como secretos desde el panel de Cloudflare o con
+# `npx wrangler pages secret put <NOMBRE>`.
+
+name = "flash-campaign"
+compatibility_date = "2026-08-01"
+pages_build_output_dir = "dist"
+
+# Espacio KV donde viven usuarios, marcas, proyectos e historial.
+# Reemplaza `id` por el identificador real del namespace creado en Cloudflare.
+# [[kv_namespaces]]
+# binding = "FLASH_KV"
+# id = "<id-del-namespace>"
+
+# Bucket R2 para la biblioteca de imágenes.
+# [[r2_buckets]]
+# binding = "MEDIA"
+# bucket_name = "flash-campaign-media"
+
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash"
+# MEDIA_BASE_URL = "https://<tu-bucket-publico>"
+# MEDIA_MANIFEST_URL = "https://<tu-bucket-publico>/manifiesto.json"

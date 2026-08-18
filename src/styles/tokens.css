@@ -1,0 +1,94 @@
+/* Tokens de marca Gamonal — fuente: lineamientos-marca-gamonal (paleta-y-usos.md).
+   No se crean colores nuevos: sólo se nombran los usos autorizados. */
+
+:root {
+  /* Colores base */
+  --g-azul: #040764;
+  --g-azul-sec: #1c73cb;
+  --g-turquesa: #20b6b6;
+  --g-amarillo: #fce865;
+  --g-magenta: #b318a3;
+  --g-gris-oscuro: #3b3b3b;
+  --g-gris-claro: #f5f5f5;
+  --g-blanco: #ffffff;
+
+  /* Variaciones de apoyo */
+  --g-azul-claro: #3d43f7;
+  --g-azul-oscuro: #04065a;
+  --g-azul-sec-claro: #378ce3;
+  --g-azul-sec-oscuro: #11457a;
+  --g-turquesa-claro: #b1f1f1;
+  --g-turquesa-oscuro: #1da4a4;
+  --g-amarillo-claro: #fdef97;
+  --g-amarillo-oscuro: #fadb0e;
+  --g-magenta-claro: #e01ecc;
+  --g-magenta-oscuro: #a11693;
+  --g-gris-medio: #545454;
+  --g-gris-profundo: #353535;
+
+  /* Fondos complementarios */
+  --g-verde-agua: #f2fdfd;
+  --g-amarillo-tenue: #fefbe2;
+
+  /* Estados semánticos */
+  --g-exito-bg: #c2f0d3;
+  --g-exito: #22c35d;
+  --g-exito-fuerte: #0d7332;
+  --g-alerta-bg: #f7eed4;
+  --g-alerta: #e8ba30;
+  --g-alerta-fuerte: #a57f0d;
+  --g-error-bg: #f5d6d6;
+  --g-error: #cf1717;
+  --g-error-fuerte: #760a0a;
+  --g-info-bg: #d6e5f5;
+  --g-info: #2273c3;
+  --g-info-fuerte: #0d4073;
+
+  /* Superficies del aplicativo */
+  --sup-pagina: var(--g-gris-claro);
+  --sup-panel: var(--g-blanco);
+  --sup-elevada: var(--g-blanco);
+  --sup-suave: var(--g-verde-agua);
+  --sup-nav: var(--g-azul);
+  --sup-nav-activa: var(--g-azul-sec);
+
+  /* Texto */
+  --txt-principal: var(--g-gris-profundo);
+  --txt-titulo: var(--g-azul);
+  --txt-suave: var(--g-gris-medio);
+  --txt-sobre-color: var(--g-blanco);
+
+  /* Bordes funcionales (campos, tablas, foco) */
+  --borde-campo: #c9ccd6;
+  --borde-tabla: #e2e4ea;
+  --foco: var(--g-azul-sec-claro);
+
+  /* Geometría — radio único del proyecto dentro del rango 5–10 px */
+  --radio: 8px;
+  --radio-pill: 999px;
+
+  /* Escala de espaciado en múltiplos de 8 */
+  --e1: 4px;
+  --e2: 8px;
+  --e3: 16px;
+  --e4: 24px;
+  --e5: 32px;
+  --e6: 48px;
+  --e7: 64px;
+
+  /* Tipografía Roboto — pesos 400 / 500 / 600 */
+  --fuente: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --t-xs: 12px;
+  --t-sm: 14px;
+  --t-base: 16px;
+  --t-md: 18px;
+  --t-lg: 22px;
+  --t-xl: 28px;
+  --t-2xl: 36px;
+  --t-3xl: 46px;
+
+  /* Estructura */
+  --sidebar-w: 264px;
+  --topbar-h: 64px;
+  --alto-tactil: 44px;
+}

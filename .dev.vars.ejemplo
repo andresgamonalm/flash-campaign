@@ -1,0 +1,5 @@
+# Copia este archivo como .dev.vars para trabajar en local con `npm run dev:cf`.
+# .dev.vars está en .gitignore: nunca subas claves al repositorio.
+SESSION_SECRET=cambia-esto-por-una-cadena-larga-y-aleatoria
+GEMINI_API_KEY=tu-clave-de-google-gemini
+GEMINI_MODEL=gemini-2.5-flash

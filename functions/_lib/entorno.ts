@@ -1,0 +1,121 @@
+import semilla from '../../data/usuarios.json'
+import { COOKIE_SESION, DURACION_SESION_MS, firmarSesion, leerSesion } from '../../shared/sesion'
+import type { Sesion } from '../../shared/sesion'
+
+export interface Env {
+  /** Espacio KV donde persisten usuarios, marcas, proyectos e historial. */
+  FLASH_KV?: KVNamespace
+  /** Bucket R2 para la biblioteca de imágenes. */
+  MEDIA?: R2Bucket
+  /** Secreto para firmar la cookie de sesión. */
+  SESSION_SECRET?: string
+  /** Clave de la API de Google Gemini que usa el asistente Char B. */
+  GEMINI_API_KEY?: string
+  GEMINI_MODEL?: string
+  /** Base alternativa de la API de Gemini (proxy corporativo o entorno de prueba). */
+  GEMINI_BASE_URL?: string
+  /** Base pública de las imágenes ya cargadas en Cloudflare. */
+  MEDIA_BASE_URL?: string
+  /** Manifiesto JSON opcional con las imágenes existentes en Cloudflare. */
+  MEDIA_MANIFEST_URL?: string
+}
+
+export interface UsuarioAlmacenado {
+  id: string
+  email: string
+  nombre: string
+  rol: 'admin' | 'usuario'
+  activo: boolean
+  correoContacto?: string
+  zonaHoraria: string
+  creadoEn: string
+  hash: string
+}
+
+export const USUARIOS_SEMILLA = (semilla as { usuarios: UsuarioAlmacenado[] }).usuarios
+
+export function json(datos: unknown, init: ResponseInit = {}): Response {
+  return new Response(JSON.stringify(datos), {
+    ...init,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(init.headers ?? {}) },
+  })
+}
+
+export function error(mensaje: string, status = 400, extra: Record<string, unknown> = {}): Response {
+  return json({ error: mensaje, ...extra }, { status })
+}
+
+export function secretoSesion(env: Env): string {
+  if (env.SESSION_SECRET) return env.SESSION_SECRET
+  // Sin secreto configurado se deriva uno estable del hash del administrador.
+  // Nunca sale del servidor y sobrevive a los reinicios porque el archivo semilla
+  // vive en el repositorio, pero conviene definir SESSION_SECRET en Cloudflare.
+  return `flash-campaign::${USUARIOS_SEMILLA[0]?.hash ?? 'sin-semilla'}`
+}
+
+export function leerCookie(request: Request, nombre: string): string | null {
+  const cookies = request.headers.get('cookie')
+  if (!cookies) return null
+  for (const parte of cookies.split(';')) {
+    const [clave, ...resto] = parte.trim().split('=')
+    if (clave === nombre) return decodeURIComponent(resto.join('='))
+  }
+  return null
+}
+
+export async function crearCookieSesion(sesion: Omit<Sesion, 'exp'>, env: Env, url: URL): Promise<string> {
+  const token = await firmarSesion({ ...sesion, exp: Date.now() + DURACION_SESION_MS }, secretoSesion(env))
+  const seguro = url.protocol === 'https:' ? ' Secure;' : ''
+  return `${COOKIE_SESION}=${encodeURIComponent(token)}; Path=/; HttpOnly;${seguro} SameSite=Lax; Max-Age=${Math.floor(
+    DURACION_SESION_MS / 1000,
+  )}`
+}
+
+export function cookieBorrada(url: URL): string {
+  const seguro = url.protocol === 'https:' ? ' Secure;' : ''
+  return `${COOKIE_SESION}=; Path=/; HttpOnly;${seguro} SameSite=Lax; Max-Age=0`
+}
+
+export async function sesionDe(request: Request, env: Env): Promise<Sesion | null> {
+  const token = leerCookie(request, COOKIE_SESION)
+  if (!token) return null
+  return leerSesion(token, secretoSesion(env))
+}
+
+/** Envuelve un manejador exigiendo sesión válida. */
+export async function conSesion(
+  request: Request,
+  env: Env,
+  manejador: (sesion: Sesion) => Promise<Response>,
+): Promise<Response> {
+  const sesion = await sesionDe(request, env)
+  if (!sesion) return error('Sesión no válida o expirada. Vuelve a iniciar sesión.', 401)
+  return manejador(sesion)
+}
+
+export async function conAdmin(
+  request: Request,
+  env: Env,
+  manejador: (sesion: Sesion) => Promise<Response>,
+): Promise<Response> {
+  return conSesion(request, env, async (sesion) => {
+    if (sesion.rol !== 'admin') return error('Esta acción es exclusiva del administrador.', 403)
+    return manejador(sesion)
+  })
+}
+
+export async function cuerpoJson<T>(request: Request): Promise<T> {
+  try {
+    return (await request.json()) as T
+  } catch {
+    throw new Error('El cuerpo de la petición no es JSON válido.')
+  }
+}
+
+export function ahora(): string {
+  return new Date().toISOString()
+}
+
+export function idNuevo(prefijo: string): string {
+  return `${prefijo}_${crypto.randomUUID()}`
+}
