@@ -180,9 +180,9 @@ export function Biblioteca() {
 
       <Aviso tipo="info" titulo="Cómo se conecta con Cloudflare">
         <p>
-          El catálogo común se lee desde el bucket enlazado o desde el manifiesto que indique la variable{' '}
-          <strong>MEDIA_MANIFEST_URL</strong>. Las imágenes que subes aquí se guardan en R2 (o en KV si R2 no está
-          enlazado) y sólo tú las ves.
+          El catálogo común se lee directamente del bucket R2 enlazado: aparece aquí todo lo que ya estaba cargado en
+          Cloudflare, con su carpeta como etiqueta de búsqueda. Las imágenes que tú subes se guardan bajo{' '}
+          <strong>img/</strong> en el mismo bucket y sólo tú las ves.
         </p>
         <p style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Icono nombre="info" tamano={16} /> Formatos admitidos: JPG, PNG, WEBP, GIF y SVG, hasta 10 MB por archivo.

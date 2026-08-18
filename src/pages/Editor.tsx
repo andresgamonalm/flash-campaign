@@ -462,11 +462,23 @@ export function Editor() {
             />
 
             <div className="editor__zoom">
-              <Boton variante="terciario" pequeno onClick={() => setZoom((z) => Math.max(0.1, Number((z - 0.1).toFixed(2))))} aria-label="Reducir zoom">
+              <Boton
+                variante="terciario"
+                pequeno
+                className="btn--icono"
+                onClick={() => setZoom((z) => Math.max(0.1, Number((z - 0.1).toFixed(2))))}
+                aria-label="Reducir zoom"
+              >
                 −
               </Boton>
               <span>{Math.round(zoom * 100)}%</span>
-              <Boton variante="terciario" pequeno onClick={() => setZoom((z) => Math.min(3, Number((z + 0.1).toFixed(2))))} aria-label="Aumentar zoom">
+              <Boton
+                variante="terciario"
+                pequeno
+                className="btn--icono"
+                onClick={() => setZoom((z) => Math.min(3, Number((z + 0.1).toFixed(2))))}
+                aria-label="Aumentar zoom"
+              >
                 +
               </Boton>
               <Boton variante="terciario" pequeno onClick={() => setZoom(1)}>

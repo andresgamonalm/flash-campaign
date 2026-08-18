@@ -186,10 +186,12 @@ export function Configuracion() {
                 </thead>
                 <tbody>
                   <tr>
-                    <th scope="row">Almacenamiento (KV FLASH_KV)</th>
+                    <th scope="row">Almacenamiento de datos (KV)</th>
                     <td>
                       <span className={`chip ${estadoServicio.almacenamiento.persistente ? 'chip--exito' : 'chip--alerta'}`}>
-                        {estadoServicio.almacenamiento.persistente ? 'Enlazado' : 'Sin enlazar'}
+                        {estadoServicio.almacenamiento.persistente
+                          ? `Enlazado como ${estadoServicio.almacenamiento.enlaceKv}`
+                          : 'Sin enlazar'}
                       </span>
                     </td>
                     <td>
@@ -199,15 +201,17 @@ export function Configuracion() {
                     </td>
                   </tr>
                   <tr>
-                    <th scope="row">Imágenes</th>
+                    <th scope="row">Archivos de imagen</th>
                     <td>
                       <span className={`chip ${estadoServicio.almacenamiento.imagenes === 'memoria' ? 'chip--alerta' : 'chip--exito'}`}>
-                        {estadoServicio.almacenamiento.imagenes.toUpperCase()}
+                        {estadoServicio.almacenamiento.imagenes === 'r2'
+                          ? `R2 como ${estadoServicio.almacenamiento.enlaceR2}`
+                          : estadoServicio.almacenamiento.imagenes.toUpperCase()}
                       </span>
                     </td>
                     <td>
                       {estadoServicio.almacenamiento.imagenes === 'r2'
-                        ? 'Las subidas van al bucket R2 enlazado como MEDIA.'
+                        ? 'Las subidas van al bucket R2 enlazado y el catálogo existente se lee directamente de él.'
                         : estadoServicio.almacenamiento.imagenes === 'kv'
                           ? 'Las subidas se guardan en KV. Enlaza un bucket R2 como MEDIA para archivos grandes.'
                           : 'Las subidas no persisten. Enlaza R2 (MEDIA) o KV (FLASH_KV).'}
@@ -247,9 +251,11 @@ export function Configuracion() {
                       </span>
                     </td>
                     <td>
-                      {estadoServicio.bibliotecaExterna
-                        ? 'La biblioteca muestra las imágenes ya cargadas en Cloudflare.'
-                        : 'Define MEDIA_MANIFEST_URL (y MEDIA_BASE_URL si las rutas son relativas) para ver el catálogo existente.'}
+                      {estadoServicio.almacenamiento.enlaceR2
+                        ? 'La biblioteca lista directamente las imágenes del bucket R2, sin necesidad de un manifiesto.'
+                        : estadoServicio.bibliotecaExterna
+                          ? 'La biblioteca muestra las imágenes del manifiesto configurado.'
+                          : 'Enlaza el bucket R2 o define MEDIA_MANIFEST_URL para ver el catálogo existente.'}
                     </td>
                   </tr>
                 </tbody>

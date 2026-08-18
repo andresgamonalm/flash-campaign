@@ -12,3 +12,4 @@
 | DEC-008 | Replicación, recursos de fondo | En banda horizontal el semicírculo de fondo se ampliaba por el ancho y tapaba el logotipo | La decoración escala por alto en banda horizontal y por ancho en columna vertical | VIGENTE |
 | DEC-009 | Tablas en móvil | Los encabezados sólo para lectores de pantalla empujaban el ancho de página y generaban scroll horizontal | `.tabla-scroll` es contenedor posicionado y `.visually-hidden` añade `clip-path` | VIGENTE |
 | DEC-010 | Iconografía | Prohibido mezclar familias o usar emojis | Familia propia en `src/components/Icono.tsx`: cuadrícula 24, trazo 1.75, extremos redondeados, sin relleno | VIGENTE |
+| DEC-011 | Biblioteca de imágenes | El catálogo dependía de un manifiesto que había que mantener a mano | Con el bucket R2 enlazado la biblioteca lista sus objetos en vivo, usa las carpetas como etiquetas y separa las subidas de los usuarios bajo `img/` | VIGENTE |

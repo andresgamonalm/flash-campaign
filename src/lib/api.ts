@@ -60,7 +60,13 @@ export interface EstadoServicio {
   api: boolean
   version: string
   autenticado: boolean
-  almacenamiento: { persistente: boolean; imagenes: 'r2' | 'kv' | 'memoria' }
+  almacenamiento: {
+    persistente: boolean
+    imagenes: 'r2' | 'kv' | 'memoria'
+    /** Nombre real del enlace encontrado en Cloudflare, para poder verificarlo. */
+    enlaceKv: string | null
+    enlaceR2: string | null
+  }
   ia: { configurada: boolean; modelo: string }
   secretoSesion: boolean
   bibliotecaExterna: boolean

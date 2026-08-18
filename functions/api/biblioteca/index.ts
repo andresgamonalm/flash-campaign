@@ -1,4 +1,10 @@
-import { almacenamientoImagenes, guardarBinario, guardarColeccion, leerColeccion } from '../../_lib/almacen'
+import {
+  almacenamientoImagenes,
+  guardarBinario,
+  guardarColeccion,
+  leerColeccion,
+  listarImagenesDelBucket,
+} from '../../_lib/almacen'
 import { ahora, conSesion, error, idNuevo, json, type Env } from '../../_lib/entorno'
 import { registrarEvento } from '../../_lib/historial'
 
@@ -24,6 +30,28 @@ const TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+
 /** Catálogo ya cargado en Cloudflare más el material que viaja con el proyecto. */
 async function catalogoBase(env: Env, origen: URL): Promise<ImagenBiblioteca[]> {
   const externas: ImagenBiblioteca[] = []
+
+  // Fuente principal: las imágenes que ya viven en el bucket R2 de la cuenta.
+  const enBucket = await listarImagenesDelBucket(env).catch(() => [])
+  for (const objeto of enBucket) {
+    externas.push({
+      id: `r2:${objeto.clave}`,
+      nombre: objeto.nombre,
+      src: env.MEDIA_BASE_URL
+        ? `${env.MEDIA_BASE_URL.replace(/\/$/, '')}/${objeto.clave}`
+        : `/api/biblioteca/objeto?clave=${encodeURIComponent(objeto.clave)}`,
+      ancho: 0,
+      alto: 0,
+      peso: objeto.peso,
+      propietarioId: null,
+      origen: 'cloudflare',
+      // La ruta dentro del bucket sirve de etiqueta para poder buscar por carpeta.
+      etiquetas: objeto.clave.split('/').slice(0, -1).filter(Boolean),
+      creadoEn: objeto.subidoEn,
+      clave: objeto.clave,
+      tipo: objeto.tipo,
+    })
+  }
 
   if (env.MEDIA_MANIFEST_URL) {
     try {

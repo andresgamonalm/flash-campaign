@@ -7,6 +7,9 @@ export interface Env {
   FLASH_KV?: KVNamespace
   /** Bucket R2 para la biblioteca de imágenes. */
   MEDIA?: R2Bucket
+  /** Nombres alternativos si los enlaces de la cuenta ya existían con otro nombre. */
+  KV_BINDING?: string
+  R2_BINDING?: string
   /** Secreto para firmar la cookie de sesión. */
   SESSION_SECRET?: string
   /** Clave de la API de Google Gemini que usa el asistente Char B. */

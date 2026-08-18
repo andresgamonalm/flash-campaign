@@ -38,21 +38,35 @@ node scripts/seed_users.mjs "<nueva-contraseña>"
 1. Conecta el repositorio a Cloudflare Pages.
    - Comando de build: `npm run build`
    - Directorio de salida: `dist`
-2. Crea los enlaces y variables del proyecto:
+2. Declara los enlaces y variables **en el panel de Cloudflare**:
 
 | Nombre | Tipo | Obligatorio | Para qué sirve |
 |---|---|---|---|
 | `FLASH_KV` | KV namespace | Sí | Usuarios, marcas, proyectos, historial y biblioteca |
-| `MEDIA` | Bucket R2 | Recomendado | Archivos de la biblioteca de imágenes |
+| `MEDIA` | Bucket R2 | Recomendado | Biblioteca de imágenes: catálogo existente y subidas |
 | `SESSION_SECRET` | Secreto | Recomendado | Firma de la cookie de sesión |
 | `GEMINI_API_KEY` | Secreto | Sí para Search | Clave de Google Gemini que usa Char B |
 | `GEMINI_MODEL` | Variable | No | Modelo a usar (por defecto `gemini-2.5-flash`) |
-| `MEDIA_MANIFEST_URL` | Variable | No | Manifiesto JSON de las imágenes ya cargadas en Cloudflare |
-| `MEDIA_BASE_URL` | Variable | No | Base pública si el manifiesto trae rutas relativas |
+| `MEDIA_BASE_URL` | Variable | No | Dominio público del bucket: si se define, la biblioteca sirve las imágenes desde ahí en vez de por la API |
+| `MEDIA_MANIFEST_URL` | Variable | No | Manifiesto JSON alternativo, sólo si el catálogo no vive en el bucket enlazado |
+| `KV_BINDING` / `R2_BINDING` | Variable | No | Nombre real del enlace, si en la cuenta ya existían con otro nombre distinto de `FLASH_KV` y `MEDIA` |
 
-Sin `FLASH_KV` el aplicativo funciona, pero avisa en pantalla que el
-almacenamiento es temporal. **Configuración → Estado del despliegue** muestra en
-todo momento qué está enlazado y qué falta.
+> El repositorio **no incluye `wrangler.toml` a propósito**. Cuando un proyecto de
+> Pages tiene ese archivo, Cloudflare toma su contenido como fuente de verdad e
+> ignora los enlaces y variables definidos en el panel. Como aquí la configuración
+> vive en el panel, agregar un `wrangler.toml` dejaría el aplicativo sin KV, sin R2
+> y sin la clave de Gemini.
+
+Los enlaces se toman por su nombre. Si en la cuenta ya existían con otro nombre,
+basta con indicarlo en `KV_BINDING` o `R2_BINDING`. **Configuración → Estado del
+despliegue** muestra el nombre que el aplicativo encontró, para poder verificarlo
+sin salir de la pantalla.
+
+Con el bucket R2 enlazado, la biblioteca lista **directamente** las imágenes que ya
+estaban cargadas en él: no hace falta ningún manifiesto. Las carpetas del bucket se
+convierten en etiquetas de búsqueda y las subidas de los usuarios quedan bajo el
+prefijo `img/`, separadas del catálogo común. Sin `FLASH_KV` el aplicativo funciona,
+pero avisa en pantalla que el almacenamiento es temporal.
 
 ## Estructura
 

@@ -10,8 +10,8 @@
     "preview": "vite preview --port 4173",
     "typecheck": "tsc -b && tsc -p tsconfig.functions.json --noEmit",
     "lint": "tsc -b",
-    "dev:cf": "npm run build && wrangler pages dev dist --port 8788 --ip 127.0.0.1 --kv FLASH_KV",
-    "deploy": "npm run build && wrangler pages deploy dist"
+    "dev:cf": "npm run build && wrangler pages dev dist --port 8788 --ip 127.0.0.1 --kv FLASH_KV --r2 MEDIA",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name flash-campaign"
   },
   "dependencies": {
     "@fontsource/roboto": "^5.2.5",

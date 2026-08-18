@@ -20,7 +20,7 @@ GRIS = RGBColor(0x54, 0x54, 0x54)
 DOCS = pathlib.Path("docs")
 CAPTURAS = DOCS / "capturas"
 FECHA = dt.date(2026, 8, 18)
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 
 def preparar(documento: Document) -> None:
@@ -169,7 +169,7 @@ def documento_tecnico() -> None:
         "Editor gráfico con fondo de color o fotografía, filtros con intensidad, formas, cuadros de texto, logotipos y botón CTA.",
         "Arrastre libre con el mouse, redimensión proporcional desde las esquinas y libre desde los lados, y desplazamiento con teclado.",
         "Reglas de replicación con tres modos: escala uniforme, banda horizontal y columna vertical.",
-        "Biblioteca de imágenes con subida propia, catálogo común y permisos por usuario.",
+        "Biblioteca de imágenes que lista directamente el bucket R2 de la cuenta, con subida propia y permisos por usuario.",
         "Marcas guardadas, creación de marcas y estilo libre.",
         "Proyectos en curso y realizados, historial con hora de creación y de exportación, y configuración de la cuenta.",
     ])
@@ -187,7 +187,7 @@ def documento_tecnico() -> None:
         ["Frontend", "React 18 + TypeScript + Vite 6", "SPA con React Router. CSS propio con tokens de marca. Sin framework de UI de terceros."],
         ["Backend", "Cloudflare Pages Functions", "API en /api/*, ejecutada en el borde. Sin servidor propio que mantener."],
         ["Almacenamiento", "Cloudflare KV (FLASH_KV)", "Usuarios, marcas, proyectos, historial y metadatos de la biblioteca."],
-        ["Archivos", "Cloudflare R2 (MEDIA)", "Imágenes subidas por los usuarios. Si R2 no está enlazado, se usa KV."],
+        ["Archivos", "Cloudflare R2 (MEDIA)", "Biblioteca de imágenes: el catálogo ya cargado en el bucket y las subidas de los usuarios, que viven bajo el prefijo img/. Si R2 no está enlazado, se usa KV."],
         ["Inteligencia artificial", "Google Gemini", "Modelo configurable; por defecto gemini-2.5-flash con salida JSON validada por esquema."],
         ["Tipografía", "@fontsource/roboto", "Roboto 400/500/600 empaquetada con el aplicativo, sin llamadas externas."],
         ["Compresión", "fflate", "Generación del ZIP de exportación en el navegador."],
@@ -206,7 +206,8 @@ def documento_tecnico() -> None:
     vinetas(doc, [
         "Google Gemini: la clave vive en las variables de Cloudflare y nunca llega al navegador. Si el modelo configurado no está disponible, el servidor prueba alternativas antes de fallar.",
         "Lectura de páginas: el servidor descarga el HTML de las URLs del briefing, extrae título, meta descripción y texto, y lo entrega al modelo. Si una página no responde, se informa en pantalla y el modelo lo declara en sus recomendaciones.",
-        "Biblioteca de Cloudflare: se conecta con MEDIA_MANIFEST_URL y MEDIA_BASE_URL para mostrar las imágenes ya cargadas en la cuenta.",
+        "Biblioteca de Cloudflare: con el bucket R2 enlazado, el aplicativo recorre sus objetos y muestra las imágenes que ya estaban cargadas, usando las carpetas como etiquetas de búsqueda. Si el bucket tiene dominio público, MEDIA_BASE_URL hace que se sirvan desde ahí; si no, pasan por la API y exigen sesión.",
+        "Detección de enlaces: si el espacio KV o el bucket no se llaman FLASH_KV y MEDIA, el aplicativo los identifica por su forma y muestra el nombre encontrado en Configuración.",
     ])
 
     doc.add_heading("4. Estructura del proyecto", level=1)
@@ -257,7 +258,8 @@ def documento_tecnico() -> None:
         ["PATCH /api/usuarios/:id", "Cambia rol, estado o contraseña de una cuenta."],
         ["GET / POST /api/marcas, DELETE /api/marcas/:id", "Marcas guardadas."],
         ["GET / POST /api/proyectos, GET / DELETE /api/proyectos/:id", "Campañas."],
-        ["GET / POST /api/biblioteca, GET / DELETE /api/biblioteca/:id", "Biblioteca de imágenes."],
+        ["GET / POST /api/biblioteca, GET / DELETE /api/biblioteca/:id", "Biblioteca de imágenes y subidas de los usuarios."],
+        ["GET /api/biblioteca/objeto?clave=…", "Entrega una imagen del catálogo que ya existía en el bucket R2."],
         ["GET / POST /api/historial", "Bitácora de trabajos."],
         ["POST /api/ia/search", "Genera la propuesta de Search con Char B."],
     ])
@@ -305,17 +307,25 @@ def documento_tecnico() -> None:
     doc.add_heading("Variables y enlaces de Cloudflare", level=2)
     tabla(doc, ["Nombre", "Tipo", "Obligatorio", "Para qué sirve"], [
         ["FLASH_KV", "KV namespace", "Sí", "Usuarios, marcas, proyectos, historial y biblioteca."],
-        ["MEDIA", "Bucket R2", "Recomendado", "Archivos de la biblioteca de imágenes."],
+        ["MEDIA", "Bucket R2", "Recomendado", "Biblioteca de imágenes: catálogo existente y subidas de los usuarios."],
         ["SESSION_SECRET", "Secreto", "Recomendado", "Firma de la cookie de sesión."],
         ["GEMINI_API_KEY", "Secreto", "Sí para Search", "Clave de Google Gemini que usa Char B."],
         ["GEMINI_MODEL", "Variable", "No", "Modelo a usar. Por defecto gemini-2.5-flash."],
         ["GEMINI_BASE_URL", "Variable", "No", "Base alternativa de la API (proxy o entorno de prueba)."],
-        ["MEDIA_MANIFEST_URL", "Variable", "No", "Manifiesto JSON de las imágenes ya cargadas en Cloudflare."],
-        ["MEDIA_BASE_URL", "Variable", "No", "Base pública si el manifiesto trae rutas relativas."],
+        ["MEDIA_BASE_URL", "Variable", "No", "Dominio público del bucket: si se define, las imágenes se sirven desde ahí."],
+        ["MEDIA_MANIFEST_URL", "Variable", "No", "Manifiesto JSON alternativo, sólo si el catálogo no vive en el bucket enlazado."],
+        ["KV_BINDING / R2_BINDING", "Variable", "No", "Nombre real del enlace si en la cuenta ya existían con otro nombre."],
     ])
     doc.add_paragraph(
         "Sin FLASH_KV el aplicativo funciona pero avisa en pantalla que el almacenamiento es temporal. "
-        "La sección Configuración muestra en todo momento el estado real de cada enlace."
+        "La sección Configuración muestra en todo momento el estado real de cada enlace y el nombre con el "
+        "que lo encontró."
+    )
+    doc.add_paragraph(
+        "El repositorio no incluye un archivo wrangler.toml de forma deliberada. Cuando un proyecto de "
+        "Cloudflare Pages tiene ese archivo, la plataforma lo toma como fuente de verdad e ignora los "
+        "enlaces y variables definidos en el panel; como aquí la configuración vive en el panel, agregarlo "
+        "dejaría el aplicativo sin KV, sin R2 y sin la clave de Gemini."
     )
 
     doc.add_heading("10. Seguridad y privacidad", level=1)
@@ -353,6 +363,8 @@ def documento_tecnico() -> None:
     tabla(doc, ["Decisión", "Alternativa evaluada", "Motivo"], [
         ["Cloudflare Pages Functions para la API", "Servidor Node propio", "El proyecto ya vive en Cloudflare; no agrega infraestructura que mantener y la clave de IA queda del lado servidor."],
         ["KV como almacén principal", "D1 (SQL)", "Los datos son documentos completos por campaña; KV es suficiente y más simple. D1 sería la migración natural si se necesitan consultas por campos."],
+        ["Listar el bucket R2 en vivo", "Mantener un manifiesto JSON del catálogo", "El catálogo no se desincroniza: lo que hay en el bucket es lo que se ve, sin un archivo intermedio que actualizar."],
+        ["Enlaces por nombre explícito, con KV_BINDING y R2_BINDING como escape", "Detectar el enlace por su forma", "Pages expone enlaces propios como ASSETS que responden a cualquier propiedad: una búsqueda por forma llegó a elegir ASSETS como bucket y tumbó la biblioteca. El nombre explícito no se equivoca."],
         ["Canvas para dibujar el banner", "DOM con divs posicionados", "Lo que se ve en el editor es exactamente lo que se exporta en JPG, sin diferencias de renderizado."],
         ["Salida estructurada de Gemini con esquema", "Pedir texto libre y parsearlo", "Evita respuestas mal formadas y permite validar los límites de caracteres del lado servidor."],
         ["Roboto empaquetada", "Google Fonts por CDN", "El aplicativo no depende de un tercero para renderizar su interfaz."],
@@ -371,13 +383,13 @@ def documento_tecnico() -> None:
     vinetas(doc, [
         "Respaldo: exportar el contenido del espacio KV con wrangler kv key list / get antes de cambios mayores.",
         "Pendiente del cliente: descargar las dos fotografías de Envato registradas en ENVATO_ASSETS.md y dejarlas en public/media/.",
-        "Pendiente del cliente: enlazar FLASH_KV, MEDIA y definir SESSION_SECRET y GEMINI_API_KEY en Cloudflare.",
-        "Pendiente del cliente: entregar la URL o el manifiesto del catálogo de imágenes ya cargado en Cloudflare para conectarlo con MEDIA_MANIFEST_URL.",
+        "Pendiente del cliente: definir SESSION_SECRET en Cloudflare para firmar las sesiones con un secreto propio.",
     ])
 
     doc.add_heading("15. Historial de cambios", level=1)
     tabla(doc, ["Versión", "Fecha", "Cambio"], [
         ["1.0.0", FECHA.strftime("%d-%m-%Y"), "Primera entrega completa: acceso, campañas, Char B, editor con replicación, biblioteca, marcas, historial, configuración y administración de usuarios."],
+        ["1.1.0", FECHA.strftime("%d-%m-%Y"), "La biblioteca lista directamente el bucket R2 de la cuenta, los enlaces de Cloudflare se detectan aunque tengan otro nombre y el HTML exportado incrusta sus imágenes."],
     ])
 
     ruta = DOCS / "documentacion_general_tecnica_flash_campaign.docx"
