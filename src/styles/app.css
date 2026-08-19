@@ -411,3 +411,27 @@
     font-size: var(--t-xl);
   }
 }
+
+/* ------------------------------------------------------- Sello de Char B --- */
+
+.cabecera-char-b {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e3);
+}
+
+/* Redondo y con borde propio: se lee como un sello, no como un icono más. */
+.sello-char-b {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .sello-char-b {
+    width: 44px;
+    height: 44px;
+  }
+}

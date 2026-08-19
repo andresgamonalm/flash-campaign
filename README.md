@@ -116,6 +116,7 @@ npm run typecheck                 # tipos del frontend y de las funciones
 node scripts/qa/stub-gemini.mjs   # doble de pruebas de Gemini (puerto 8899)
 node scripts/qa/recorrido.mjs     # recorrido funcional completo con navegador real
 node scripts/qa/replicacion.mjs   # prueba visual de las 3 reglas de replicación
+node scripts/qa/tactil.mjs        # editor con el dedo en tablet y revisión en móvil
 ```
 
 El recorrido cubre login, creación de campaña, generación con Char B, edición,

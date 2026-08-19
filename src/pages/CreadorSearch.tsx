@@ -205,14 +205,25 @@ export function CreadorSearch() {
   return (
     <div className="seccion">
       <div className="seccion__cabecera">
-        <div>
-          <p className="migas">
-            <Link to="/proyectos">Proyectos</Link> <Icono nombre="derecha" tamano={14} /> {proyecto.nombre}
-          </p>
-          <h2>Anuncios de Google Search</h2>
-          <p style={{ color: 'var(--txt-suave)' }}>
-            Char B lee las páginas que le entregues, razona el producto y la competencia y propone la campaña completa.
-          </p>
+        <div className="cabecera-char-b">
+          {/* Sello de Char B: identifica de un vistazo la sección que opera con
+              el asistente, frente a las que son puramente manuales. */}
+          <img
+            className="sello-char-b"
+            src="/brand/flash-campaign/sello_char_b.svg"
+            alt="Char B, asistente de Google Search"
+            width={56}
+            height={56}
+          />
+          <div>
+            <p className="migas">
+              <Link to="/proyectos">Proyectos</Link> <Icono nombre="derecha" tamano={14} /> {proyecto.nombre}
+            </p>
+            <h2>Anuncios de Google Search</h2>
+            <p style={{ color: 'var(--txt-suave)' }}>
+              Char B lee las páginas que le entregues, razona el producto y la competencia y propone la campaña completa.
+            </p>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 'var(--e2)', flexWrap: 'wrap' }}>
           {proyecto.canales.some((c) => c !== 'search') ? (

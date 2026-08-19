@@ -609,22 +609,43 @@
 }
 
 .manija {
+  --manija: 12px;
+  --manija-borde: -7px;
+  --manija-toque: -10px;
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: var(--manija);
+  height: var(--manija);
   background: var(--g-blanco);
   border: 2px solid var(--g-azul-sec);
   border-radius: 3px;
 }
 
-.manija--nw { top: -7px; left: -7px; cursor: nwse-resize; }
-.manija--ne { top: -7px; right: -7px; cursor: nesw-resize; }
-.manija--sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
-.manija--se { bottom: -7px; right: -7px; cursor: nwse-resize; }
-.manija--n { top: -7px; left: 50%; margin-left: -6px; cursor: ns-resize; }
-.manija--s { bottom: -7px; left: 50%; margin-left: -6px; cursor: ns-resize; }
-.manija--w { left: -7px; top: 50%; margin-top: -6px; cursor: ew-resize; }
-.manija--e { right: -7px; top: 50%; margin-top: -6px; cursor: ew-resize; }
+/* Área de agarre invisible alrededor del cuadrito. El punto visible puede ser
+   pequeño y discreto, pero lo que se toca no: con el dedo, 12 px es inalcanzable. */
+.manija::before {
+  content: '';
+  position: absolute;
+  inset: var(--manija-toque);
+}
+
+/* En pantallas táctiles el punto crece y su zona de agarre llega a ~44 px, la
+   medida mínima recomendada para el dedo. */
+@media (pointer: coarse) {
+  .manija {
+    --manija: 18px;
+    --manija-borde: -10px;
+    --manija-toque: -13px;
+  }
+}
+
+.manija--nw { top: var(--manija-borde); left: var(--manija-borde); cursor: nwse-resize; }
+.manija--ne { top: var(--manija-borde); right: var(--manija-borde); cursor: nesw-resize; }
+.manija--sw { bottom: var(--manija-borde); left: var(--manija-borde); cursor: nesw-resize; }
+.manija--se { bottom: var(--manija-borde); right: var(--manija-borde); cursor: nwse-resize; }
+.manija--n { top: var(--manija-borde); left: 50%; margin-left: calc(var(--manija) / -2); cursor: ns-resize; }
+.manija--s { bottom: var(--manija-borde); left: 50%; margin-left: calc(var(--manija) / -2); cursor: ns-resize; }
+.manija--w { left: var(--manija-borde); top: 50%; margin-top: calc(var(--manija) / -2); cursor: ew-resize; }
+.manija--e { right: var(--manija-borde); top: 50%; margin-top: calc(var(--manija) / -2); cursor: ew-resize; }
 
 .lienzo__guia {
   position: absolute;
