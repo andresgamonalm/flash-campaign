@@ -50,12 +50,17 @@ export const USUARIOS_SEMILLA = (semilla as { usuarios: UsuarioAlmacenado[] }).u
 /**
  * Modelos que prueba Char B, en orden de preferencia.
  *
- * Se recorre la lista hasta que uno responde: la clave de Gemini no está atada a
- * una versión concreta, así que si un nombre no existe todavía para esta cuenta
- * se pasa al siguiente sin dejar al usuario sin propuesta. La variable
- * `GEMINI_MODEL` de Cloudflare tiene prioridad sobre esta lista.
+ * No se fija un número de versión a propósito. Google retira modelos para las
+ * cuentas nuevas sin aviso —el aplicativo hermano se quedó sin servicio dos veces
+ * por eso, con gemini-2.0-flash y con gemini-2.5-pro— y un nombre concreto tarde
+ * o temprano devuelve 404. El alias `gemini-flash-latest` apunta siempre al
+ * modelo rápido más reciente que tenga la cuenta, así que Char B se mantiene en
+ * la última generación sin tener que perseguir nombres.
+ *
+ * Se recorre la lista hasta que una responde; `GEMINI_MODEL` en Cloudflare tiene
+ * prioridad sobre todas.
  */
-export const MODELOS_GEMINI = ['gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.0-flash']
+export const MODELOS_GEMINI = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-pro-latest']
 
 export function json(datos: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(datos), {

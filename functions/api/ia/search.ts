@@ -44,6 +44,23 @@ const MAXIMO_TEXTO = 12_000
 const TIEMPO_LECTURA_MS = 8000
 
 /**
+ * Señal de cancelación por tiempo, sin depender de `AbortSignal.timeout`.
+ *
+ * Ese atajo sólo existe si la fecha de compatibilidad del proyecto en Cloudflare
+ * es reciente, y esa fecha se configura en el panel, no aquí. Cuando no existe,
+ * invocarlo lanza una excepción que nadie captura y la plataforma responde un 502
+ * sin cuerpo: justo el error que se trataba de evitar. Con un AbortController
+ * corriente el comportamiento es el mismo en cualquier versión del entorno.
+ */
+function cancelarEn(ms: number): AbortSignal {
+  const abortable = AbortSignal as unknown as { timeout?: (ms: number) => AbortSignal }
+  if (typeof abortable.timeout === 'function') return abortable.timeout(ms)
+  const control = new AbortController()
+  setTimeout(() => control.abort(new DOMException('Tiempo de espera agotado', 'TimeoutError')), ms)
+  return control.signal
+}
+
+/**
  * Presupuesto total de espera para consultar a Char B.
  *
  * Es un tope para toda la operación, no por modelo: con un límite por intento,
@@ -121,7 +138,7 @@ async function leerPagina(url: string): Promise<{ url: string; estado: string; t
       headers: { 'user-agent': 'FlashCampaign/1.0 (+lector de briefing)', accept: 'text/html,*/*' },
       redirect: 'follow',
       // Sin límite de espera, una página lenta deja colgada toda la generación.
-      signal: AbortSignal.timeout(TIEMPO_LECTURA_MS),
+      signal: cancelarEn(TIEMPO_LECTURA_MS),
     })
     if (!respuesta.ok) {
       return { url, estado: `respondió ${respuesta.status}`, texto: '', caracteres: 0 }
@@ -311,48 +328,53 @@ async function llamarGemini(env: Env, prompt: string): Promise<{ datos: Resultad
     const base = (env.GEMINI_BASE_URL ?? 'https://generativelanguage.googleapis.com').replace(/\/$/, '')
 
     /**
-     * Los modelos de la familia Gemini 3 razonan antes de responder, y ese
-     * razonamiento puede alargar la respuesta hasta más de lo que Cloudflare
-     * espera por una petición: la plataforma la corta y el navegador sólo ve un
-     * 502 sin texto. Aquí el trabajo de razonar ya lo hace la instrucción del
-     * sistema, así que se pide la respuesta directa.
+     * Ajustes que alguna versión del modelo puede rechazar.
+     *
+     * `razonar` deja que el modelo piense antes de escribir: mejora el texto pero
+     * puede tardar más de lo que la plataforma espera, así que se pide apagado.
+     * `esquema` fuerza la forma exacta de la respuesta. Si el modelo devuelve 400
+     * por cualquiera de los dos, se reintenta sin él en vez de dar la generación
+     * por perdida: es preferible una respuesta algo más suelta que ninguna.
      */
-    const cuerpoPeticion = (conRazonamiento: boolean) =>
+    const cuerpoPeticion = (razonar: boolean, esquema: boolean) =>
       JSON.stringify({
         systemInstruction: { parts: [{ text: INSTRUCCION }] },
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.65,
           topP: 0.9,
-          maxOutputTokens: 8192,
+          // Razonar consume tokens de salida: si no se amplía el tope, el modelo
+          // gasta el presupuesto pensando y devuelve vacío.
+          maxOutputTokens: razonar ? 24576 : 8192,
           responseMimeType: 'application/json',
-          responseSchema: ESQUEMA,
-          ...(conRazonamiento ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+          ...(esquema ? { responseSchema: ESQUEMA } : {}),
+          thinkingConfig: { thinkingBudget: razonar ? -1 : 0 },
         },
       })
 
-    const pedir = (conRazonamiento: boolean) =>
-      fetch(`${base}/v1beta/models/${modelo}:generateContent`, {
+    const pedir = (razonar: boolean, esquema: boolean) =>
+      // La clave viaja como parámetro de la URL, que es la forma que admiten
+      // todas las versiones de la API.
+      fetch(`${base}/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY as string)}`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY as string },
-        body: cuerpoPeticion(conRazonamiento),
+        headers: { 'content-type': 'application/json' },
+        body: cuerpoPeticion(razonar, esquema),
         // Antes de que corte la plataforma, corta el aplicativo: así el usuario
         // recibe una explicación en vez de una página de error ajena.
-        signal: AbortSignal.timeout(Math.max(MINIMO_INTENTO_MS, Math.min(TIEMPO_POR_INTENTO_MS, limite - Date.now()))),
+        signal: cancelarEn(Math.max(MINIMO_INTENTO_MS, Math.min(TIEMPO_POR_INTENTO_MS, limite - Date.now()))),
       })
 
     let respuesta: Response
     try {
-      respuesta = await pedir(false)
-      // No todas las versiones aceptan el ajuste de razonamiento. Si lo rechazan,
-      // se repite la llamada tal cual en vez de dar la generación por perdida.
+      respuesta = await pedir(false, true)
       if (respuesta.status === 400) {
         const detalle = await respuesta.clone().text()
-        if (/thinking/i.test(detalle)) respuesta = await pedir(true)
+        if (/thinking/i.test(detalle)) respuesta = await pedir(true, true)
+        else if (/schema/i.test(detalle)) respuesta = await pedir(false, false)
       }
     } catch (e) {
       ultimoError =
-        (e as Error)?.name === 'TimeoutError'
+        (e as Error)?.name === 'TimeoutError' || (e as Error)?.name === 'AbortError'
           ? `El modelo ${modelo} agotó el tiempo de espera.`
           : `No se pudo contactar a ${modelo}: ${(e as Error)?.message ?? 'error desconocido'}`
       continue
@@ -365,7 +387,8 @@ async function llamarGemini(env: Env, prompt: string): Promise<{ datos: Resultad
     if (!respuesta.ok) {
       const detalle = await respuesta.text()
       ultimoError = `Gemini respondió ${respuesta.status}: ${detalle.slice(0, 300)}`
-      if (respuesta.status === 400 || respuesta.status === 403) break
+      // Un 403 es de la clave, no del modelo: seguir probando no aporta nada.
+      if (respuesta.status === 403) break
       continue
     }
 
@@ -453,7 +476,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) =>
       })
       return json({ resultado })
     } catch (e) {
-      return error((e as Error).message, 502)
+      // 424 y no 502: un 5xx propio es indistinguible del error de la plataforma
+      // y además hay intermediarios que lo reemplazan por su página, con lo que
+      // el motivo real nunca llega a la pantalla.
+      return error((e as Error).message, 424)
     }
     } catch (e) {
       // Un fallo aquí llegaba al navegador como un 502 sin texto y no había forma
