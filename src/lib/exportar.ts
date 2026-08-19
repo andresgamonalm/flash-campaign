@@ -181,14 +181,24 @@ export function normalizarNombre(texto: string): string {
   )
 }
 
-export function nombreArchivo(nombreCampana: string, banner: Banner, extension: string): string {
-  return `${normalizarNombre(nombreCampana)}_${banner.ancho}x${banner.alto}.${extension}`
+export function nombreArchivo(nombreCampana: string, banner: Banner, extension: string, escala = 1): string {
+  const sufijo = escala > 1 ? `_${escala}x` : ''
+  return `${normalizarNombre(nombreCampana)}_${banner.ancho}x${banner.alto}${sufijo}.${extension}`
 }
 
 export interface OpcionesExportacion {
   jpg: boolean
   html: boolean
   calidadJpg: number
+  /**
+   * Multiplicador de resolución del JPG.
+   *
+   * A 1x el archivo mide exactamente lo que declara el formato, que es lo que
+   * exige Google Ads para subir la pieza. A 2x o 3x el archivo se ve nítido en
+   * pantallas de alta densidad y en presentaciones, pero ya no cumple la medida
+   * exacta del formato.
+   */
+  escalaJpg: number
 }
 
 export async function exportarBanners(
@@ -203,8 +213,9 @@ export async function exportarBanners(
 
   for (const banner of banners) {
     if (opciones.jpg) {
-      const blob = await bannerAJpg(banner, opciones.calidadJpg)
-      const nombre = nombreArchivo(nombreCampana, banner, 'jpg')
+      const escala = Math.max(1, Math.min(4, opciones.escalaJpg || 1))
+      const blob = await bannerAJpg(banner, opciones.calidadJpg, escala)
+      const nombre = nombreArchivo(nombreCampana, banner, 'jpg', escala)
       archivos[`jpg/${nombre}`] = new Uint8Array(await blob.arrayBuffer())
       listado.push(`jpg/${nombre}`)
     }
@@ -224,6 +235,13 @@ export async function exportarBanners(
       '',
       'Contenido:',
       ...listado.map((l) => `- ${l}`),
+      '',
+      opciones.escalaJpg > 1
+        ? `Los JPG salen a ${opciones.escalaJpg}x: se ven nitidos en pantalla y en presentaciones, pero`
+        : 'Los JPG salen al tamano exacto de cada formato, listos para subir a Google Ads y Meta.',
+      opciones.escalaJpg > 1
+        ? 'para subirlos a Google Ads hay que exportarlos a 1x, que es la medida exacta exigida.'
+        : '',
       '',
       'Los HTML incluyen la variable clickTag y la etiqueta ad.size que exigen',
       'Google Ads y Campaign Manager. Cada carpeta html/ es una pieza autónoma.',

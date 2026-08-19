@@ -41,15 +41,12 @@ export const FOTO_INICIO: RecursoFoto = {
  * imagen para que el bloque de color quede limpio en lugar de mostrar el texto
  * alternativo suelto.
  */
-export function alFallarFoto(recurso: RecursoFoto) {
+export function alFallarFoto(_recurso: RecursoFoto) {
   return (evento: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = evento.currentTarget
-    if (img.dataset.respaldo === 'aplicado') {
-      img.dataset.respaldo = 'agotado'
-      img.style.display = 'none'
-      return
-    }
-    img.dataset.respaldo = 'aplicado'
-    img.src = recurso.vistaPrevia
+    // Si el archivo licenciado no está en `public/`, se oculta la imagen y queda
+    // el bloque de color de la marca. Antes se recurría a la vista previa pública
+    // de Envato, pero esa copia lleva marca de agua: mostrarla en producción es
+    // peor que no mostrar foto, y además es una descarga a un dominio externo.
+    evento.currentTarget.style.display = 'none'
   }
 }

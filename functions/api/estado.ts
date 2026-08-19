@@ -14,7 +14,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const sesion = await sesionDe(request, env)
   return json({
     api: true,
-    version: '1.6.0',
+    version: '1.9.0',
     autenticado: Boolean(sesion),
     // Permite comprobar desde fuera qué versión del código está realmente
     // publicada: si `vueltas` no vale 12000, Cloudflare sigue sirviendo una

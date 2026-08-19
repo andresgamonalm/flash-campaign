@@ -15,12 +15,14 @@ async function crearHash(clave) {
 }
 
 const clave = process.argv[2]
-if (!clave) { console.error('Uso: node scripts/seed_users.mjs <clave-admin>'); process.exit(1) }
+const claveInvitados = process.argv[3]
+if (!clave) { console.error('Uso: node scripts/seed_users.mjs <clave-admin> [clave-invitados]'); process.exit(1) }
 
 const usuarios = [
   {
     id: 'usr_admin',
     email: 'hola@andresgamonal.com',
+    usuario: 'andres',
     nombre: 'Andrés Gamonal',
     rol: 'admin',
     activo: true,
@@ -30,6 +32,22 @@ const usuarios = [
     hash: await crearHash(clave),
   },
 ]
+
+// Cuenta compartida para mostrar el aplicativo. Su identificador no es un correo
+// a propósito: entra con el nombre de usuario "invitados".
+if (claveInvitados) {
+  usuarios.push({
+    id: 'usr_invitados',
+    email: 'invitados',
+    usuario: 'invitados',
+    nombre: 'Invitados',
+    rol: 'usuario',
+    activo: true,
+    zonaHoraria: 'America/Santiago',
+    creadoEn: '2026-01-02T00:00:00.000Z',
+    hash: await crearHash(claveInvitados),
+  })
+}
 
 writeFileSync('data/usuarios.json', JSON.stringify({ version: 1, usuarios }, null, 2) + '\n')
 console.log('data/usuarios.json actualizado con', usuarios.length, 'usuario(s).')

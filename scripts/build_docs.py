@@ -412,7 +412,7 @@ def documento_publicitario() -> None:
         ["Nombre comercial", "Flash Campaign"],
         ["Nombre normalizado", "flash_campaign"],
         ["Categoría", "Herramienta de producción publicitaria digital"],
-        ["Desarrollado por", "Gamonal"],
+        ["Pensado y creado por", "Gamonal"],
         ["Plataformas que cubre", "Google Search, Google Display y Meta"],
         ["Acceso", "Web y webapp, con cuentas por usuario"],
     ])
@@ -516,7 +516,7 @@ def documento_publicitario() -> None:
         "piezas horizontales y las verticales. En paralelo, Char B entra a la página de tu promoción, "
         "entiende el producto y la oferta, y propone títulos, descripciones y palabras clave por "
         "concordancia, con los caracteres ya contados.\n\n"
-        "Exporta en JPG y en HTML5 con clickTag, listo para cargar. Desarrollado por Gamonal."
+        "Exporta en JPG y en HTML5 con clickTag, listo para cargar. Pensado y creado por Gamonal."
     )
 
     doc.add_heading("Textos breves para redes sociales", level=1)

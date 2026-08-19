@@ -46,7 +46,7 @@ export function Editor() {
   const [vistaPrevia, setVistaPrevia] = useState(false)
   const [exportando, setExportando] = useState(false)
   const [panelMovil, setPanelMovil] = useState<'formatos' | 'lienzo' | 'propiedades'>('lienzo')
-  const [opcionesExport, setOpcionesExport] = useState({ jpg: true, html: true, calidadJpg: 0.92 })
+  const [opcionesExport, setOpcionesExport] = useState({ jpg: true, html: true, calidadJpg: 0.92, escalaJpg: 2 })
   const [modalExport, setModalExport] = useState(false)
 
   const contenedorLienzo = useRef<HTMLDivElement>(null)
@@ -93,6 +93,35 @@ export function Editor() {
     return () => window.removeEventListener('resize', ajustar)
   }, [banner])
 
+  // Se guarda en una referencia para que el manejador de teclado siempre borre
+  // sobre el estado actual, sin tener que volver a suscribirse en cada cambio.
+  const eliminarSeleccionadoRef = useRef<() => void>(() => {})
+
+  /**
+   * Atajos de teclado del lienzo.
+   *
+   * Suprimir o Retroceso borran el elemento seleccionado y Escape lo deselecciona,
+   * que es lo que cualquiera intenta antes de buscar un botón. Se ignoran mientras
+   * se escribe en un campo, para no borrar una forma al corregir un texto.
+   */
+  useEffect(() => {
+    function alPulsar(evento: KeyboardEvent) {
+      if (evento.key !== 'Delete' && evento.key !== 'Backspace' && evento.key !== 'Escape') return
+      const foco = document.activeElement as HTMLElement | null
+      const etiqueta = foco?.tagName
+      if (etiqueta === 'INPUT' || etiqueta === 'TEXTAREA' || etiqueta === 'SELECT' || foco?.isContentEditable) return
+      if (evento.key === 'Escape') {
+        setSeleccionadoId(null)
+        return
+      }
+      if (!seleccionadoId) return
+      evento.preventDefault()
+      eliminarSeleccionadoRef.current()
+    }
+    window.addEventListener('keydown', alPulsar)
+    return () => window.removeEventListener('keydown', alPulsar)
+  }, [seleccionadoId])
+
   const actualizarBanner = useCallback(
     (cambios: Partial<Banner>, marcarManual = true) => {
       setDiseno((previo) => {
@@ -134,6 +163,13 @@ export function Editor() {
     actualizarBanner({ elementos: [...banner.elementos, ...lista] })
     setSeleccionadoId(lista[lista.length - 1].id)
   }
+
+  function eliminarSeleccionado() {
+    if (!banner || !elemento) return
+    actualizarBanner({ elementos: banner.elementos.filter((el) => el.id !== elemento.id) })
+    setSeleccionadoId(null)
+  }
+  eliminarSeleccionadoRef.current = eliminarSeleccionado
 
   function ordenar(direccion: 'adelante' | 'atras' | 'frente' | 'fondo') {
     if (!banner || !elemento) return
@@ -508,11 +544,7 @@ export function Editor() {
             onDuplicar={() => {
               if (elemento) anadirElemento(duplicarElemento(elemento, banner))
             }}
-            onEliminar={() => {
-              if (!elemento) return
-              actualizarBanner({ elementos: banner.elementos.filter((el) => el.id !== elemento.id) })
-              setSeleccionadoId(null)
-            }}
+            onEliminar={eliminarSeleccionado}
             onElegirFondoImagen={() => setSelectorImagen('fondo')}
             onCambiarImagen={() => setSelectorImagen('elemento')}
           />
@@ -591,6 +623,31 @@ export function Editor() {
               />
               HTML5 con clickTag (Google Ads y Campaign Manager)
             </label>
+
+            {opcionesExport.jpg ? (
+              <Campo etiqueta="Resolución del JPG">
+                {(props) => (
+                  <select
+                    {...props}
+                    className="input"
+                    value={opcionesExport.escalaJpg}
+                    onChange={(e) => setOpcionesExport({ ...opcionesExport, escalaJpg: Number(e.target.value) })}
+                  >
+                    <option value={1}>1x · medida exacta del formato (para subir a Google Ads)</option>
+                    <option value={2}>2x · alta resolución (presentaciones y pantallas nítidas)</option>
+                    <option value={3}>3x · máxima resolución</option>
+                  </select>
+                )}
+              </Campo>
+            ) : null}
+
+            {opcionesExport.jpg ? (
+              <p style={{ fontSize: 'var(--t-xs)', color: 'var(--txt-suave)', margin: 0 }}>
+                {opcionesExport.escalaJpg > 1
+                  ? `Cada pieza saldrá a ${opcionesExport.escalaJpg} veces su medida (por ejemplo, 300 × 250 se exporta a ${300 * opcionesExport.escalaJpg} × ${250 * opcionesExport.escalaJpg} px). Se ve nítida, pero para subirla a Google Ads hay que exportarla a 1x.`
+                  : 'Cada pieza saldrá con la medida exacta que exige el formato, lista para subir.'}
+              </p>
+            ) : null}
 
             {opcionesExport.jpg ? (
               <Campo etiqueta={`Calidad del JPG: ${Math.round(opcionesExport.calidadJpg * 100)}%`}>

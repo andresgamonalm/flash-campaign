@@ -215,8 +215,14 @@ export function Inspector({
           <div className="inspector__titulo">
             <h3>{elemento.nombre}</h3>
             <div className="inspector__acciones">
-              <Boton variante="terciario" pequeno icono="copiar" onClick={onDuplicar} aria-label="Duplicar elemento" />
-              <Boton variante="terciario" pequeno icono="basura" onClick={onEliminar} aria-label="Eliminar elemento" />
+              {/* Con texto, no sólo el icono: borrar un elemento tiene que ser
+                  evidente sin adivinar qué significa cada dibujo. */}
+              <Boton variante="terciario" pequeno icono="copiar" onClick={onDuplicar}>
+                Duplicar
+              </Boton>
+              <Boton variante="terciario" pequeno icono="basura" onClick={onEliminar} title="También con la tecla Suprimir">
+                Eliminar
+              </Boton>
             </div>
           </div>
 

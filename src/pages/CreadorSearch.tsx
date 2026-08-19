@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Aviso, Boton, Campo, Cargando, EstadoVacio, Tabs, useAvisar } from '../components/ui'
 import { Icono } from '../components/Icono'
-import { SelectorImagenes } from '../components/SelectorImagenes'
 import { api, ErrorApi } from '../lib/api'
 import { useSesion } from '../lib/sesion'
 import { fecha } from '../lib/formato'
@@ -83,7 +82,6 @@ export function CreadorSearch() {
   const [error, setError] = useState<string | null>(null)
   const [generando, setGenerando] = useState(false)
   const [guardando, setGuardando] = useState(false)
-  const [selector, setSelector] = useState(false)
   const [grupoActivo, setGrupoActivo] = useState(0)
 
   const cargar = useCallback(async () => {
@@ -206,20 +204,6 @@ export function CreadorSearch() {
 
   return (
     <div className="seccion">
-      {selector ? (
-        <SelectorImagenes
-          titulo="Fotos para los anuncios"
-          multiple
-          onCerrar={() => setSelector(false)}
-          onElegir={(img) =>
-            actualizar('imagenes', [
-              ...brief.imagenes.filter((i) => i.id !== img.id),
-              { id: img.id, nombre: img.nombre, src: img.src },
-            ])
-          }
-        />
-      ) : null}
-
       <div className="seccion__cabecera">
         <div>
           <p className="migas">
@@ -350,31 +334,6 @@ export function CreadorSearch() {
                 />
               )}
             </Campo>
-          </div>
-
-          <div className="campo">
-            <span className="campo__label">Fotos a utilizar</span>
-            <span className="campo__ayuda">
-              Opcional. Sirven de contexto para el copy y quedan asociadas a la campaña.
-            </span>
-            <div className="miniaturas">
-              {brief.imagenes.map((img) => (
-                <div key={img.id} className="miniatura">
-                  <img src={img.src} alt={img.nombre} />
-                  <button
-                    type="button"
-                    className="miniatura__quitar"
-                    onClick={() => actualizar('imagenes', brief.imagenes.filter((i) => i.id !== img.id))}
-                    aria-label={`Quitar ${img.nombre}`}
-                  >
-                    <Icono nombre="cerrar" tamano={14} />
-                  </button>
-                </div>
-              ))}
-              <Boton variante="secundario" icono="imagen" onClick={() => setSelector(true)}>
-                Elegir o subir
-              </Boton>
-            </div>
           </div>
 
           <Campo

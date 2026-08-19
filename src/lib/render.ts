@@ -292,6 +292,10 @@ export async function bannerACanvas(banner: Banner, escala = 1): Promise<HTMLCan
   canvas.height = Math.round(banner.alto * escala)
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('El navegador no entregó contexto 2D para exportar el banner.')
+  // Sin esto el navegador reescala las fotografías con el filtro más barato y la
+  // pieza sale dentada. Es la diferencia entre un banner presentable y uno pixelado.
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
   dibujarBanner(ctx, banner, { escala, imagenes })
   return canvas
 }

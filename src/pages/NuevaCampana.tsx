@@ -20,7 +20,9 @@ export function NuevaCampana() {
 
   const canalInicial = parametros.get('canal') as Canal | null
   const [nombre, setNombre] = useState('')
-  const [canales, setCanales] = useState<Canal[]>(canalInicial ? [canalInicial] : ['search', 'display', 'meta'])
+  // Las plataformas arrancan sin marcar: elegirlas es la primera decisión de la
+  // campaña, y darlas por seleccionadas se la quita al usuario.
+  const [canales, setCanales] = useState<Canal[]>(canalInicial ? [canalInicial] : [])
   const [marcas, setMarcas] = useState<Marca[] | null>(null)
   const [marcaId, setMarcaId] = useState<string>('marca_zurich')
   const [estiloLibre, setEstiloLibre] = useState(false)

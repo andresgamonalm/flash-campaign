@@ -4,13 +4,25 @@
     {
       "id": "usr_admin",
       "email": "hola@andresgamonal.com",
+      "usuario": "andres",
       "nombre": "Andrés Gamonal",
       "rol": "admin",
       "activo": true,
       "zonaHoraria": "America/Santiago",
       "correoContacto": "hola@andresgamonal.com",
       "creadoEn": "2026-01-01T00:00:00.000Z",
-      "hash": "pbkdf2$12000$StaDYbyuGcmL94qI1rxepw==$U1pnWUNvXttuP8TQNZPTaKuK6B1Q0dw/o0NrIGgFYUM="
+      "hash": "pbkdf2$12000$VQZWeN0R7t3LrbN7RYGPcQ==$YK2EzaNSzSUPtmFHCSUq6Mz7yerDh+OJYXLd6ucndh4="
+    },
+    {
+      "id": "usr_invitados",
+      "email": "invitados",
+      "usuario": "invitados",
+      "nombre": "Invitados",
+      "rol": "usuario",
+      "activo": true,
+      "zonaHoraria": "America/Santiago",
+      "creadoEn": "2026-01-02T00:00:00.000Z",
+      "hash": "pbkdf2$12000$U3aZNOj8m6IkBzerox/slg==$YezIw7ytJxouqsA7Cu/krNAJaUozbVfd2RMzY0mlHAU="
     }
   ]
 }

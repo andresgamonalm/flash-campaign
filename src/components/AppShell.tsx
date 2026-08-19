@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="shell__pie">
-          <p className="shell__endoso">Desarrollado por</p>
+          <p className="shell__endoso">Pensado y creado por</p>
           <img src="/brand/gamonal/logo_gamonal_blanco.png" alt="Gamonal" className="logo-endoso" />
         </div>
       </aside>

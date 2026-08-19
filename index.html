@@ -34,8 +34,13 @@
     <script>
       (function () {
         var mostrado = false
+        /** El aplicativo ya está en marcha: cualquier fallo posterior lo maneja él. */
+        function arrancado() {
+          var raiz = document.getElementById('root')
+          return Boolean(raiz && raiz.children.length > 0)
+        }
         function mostrar(detalle) {
-          if (mostrado) return
+          if (mostrado || arrancado()) return
           mostrado = true
           var bloque = document.getElementById('fallo-inicio')
           var texto = document.getElementById('fallo-detalle')
@@ -45,7 +50,14 @@
         window.addEventListener(
           'error',
           function (evento) {
-            var origen = evento.filename || (evento.target && (evento.target.src || evento.target.href)) || ''
+            var destino = evento.target
+            var etiqueta = destino && destino.tagName ? String(destino.tagName).toUpperCase() : ''
+            // Este panel sólo existe para el caso en que el aplicativo no llega a
+            // arrancar. Una imagen, una tipografía o un vídeo que no cargan son
+            // incidencias de contenido: las resuelve el propio aplicativo y no
+            // deben tapar la pantalla con un error.
+            if (etiqueta && etiqueta !== 'SCRIPT' && etiqueta !== 'LINK') return
+            var origen = evento.filename || (destino && (destino.src || destino.href)) || ''
             // Caso concreto y fácil de confundir: el servidor está publicando el
             // código sin compilar, así que el navegador pide un archivo que sólo
             // existe durante el desarrollo.

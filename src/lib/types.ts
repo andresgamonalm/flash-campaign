@@ -5,6 +5,8 @@ export type Rol = 'admin' | 'usuario'
 export interface Usuario {
   id: string
   email: string
+  /** Nombre de usuario alternativo: se puede entrar con esto o con el correo. */
+  usuario?: string
   nombre: string
   rol: Rol
   activo: boolean

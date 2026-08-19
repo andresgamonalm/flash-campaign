@@ -18,9 +18,17 @@ export async function listarUsuarios(env: Env): Promise<UsuarioAlmacenado[]> {
   return [...porEmail.values()].sort((a, b) => a.creadoEn.localeCompare(b.creadoEn))
 }
 
-export async function buscarPorEmail(env: Env, email: string): Promise<UsuarioAlmacenado | undefined> {
+/**
+ * Busca por correo o por nombre de usuario.
+ *
+ * Una cuenta puede tener las dos identidades: el correo sirve para el contacto y
+ * el nombre de usuario para entrar rápido, y ambas llevan a la misma persona.
+ */
+export async function buscarPorEmail(env: Env, identificador: string): Promise<UsuarioAlmacenado | undefined> {
+  const buscado = identificador.trim().toLowerCase()
+  if (!buscado) return undefined
   const lista = await listarUsuarios(env)
-  return lista.find((u) => u.email.toLowerCase() === email.trim().toLowerCase())
+  return lista.find((u) => u.email.toLowerCase() === buscado || u.usuario?.toLowerCase() === buscado)
 }
 
 export async function buscarPorId(env: Env, id: string): Promise<UsuarioAlmacenado | undefined> {

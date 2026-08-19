@@ -44,7 +44,7 @@ const HTML = `<!doctype html>
   </section>
   <section class="arte">
     <img class="icono" src="${BASE}/brand/flash-campaign/icono_flash_campaign_blanco.svg" alt="">
-    <div class="franja"><span>Desarrollado por Gamonal</span></div>
+    <div class="franja"><span>Pensado y creado por Gamonal</span></div>
   </section>
 </body></html>`
 

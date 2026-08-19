@@ -56,15 +56,18 @@ export function Login() {
         <form className="login__formulario" onSubmit={enviar} noValidate>
           {error ? <Aviso tipo="error">{error}</Aviso> : null}
 
-          <Campo etiqueta="Correo" requerido>
+          {/* Tipo texto, no correo: hay cuentas cuyo identificador es un nombre de
+              usuario y el navegador rechazaría la forma "correo obligatorio". */}
+          <Campo etiqueta="Correo o usuario" requerido>
             {(props) => (
               <input
                 {...props}
                 className="input"
-                type="email"
+                type="text"
                 name="email"
                 autoComplete="username"
-                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nombre@dominio.cl"
@@ -96,7 +99,7 @@ export function Login() {
         </form>
 
         <div className="login__pie">
-          <span>Desarrollado por</span>
+          <span>Pensado y creado por</span>
           <img src="/brand/gamonal/logo_gamonal_azulino.png" alt="Gamonal" className="logo-endoso" />
         </div>
       </section>

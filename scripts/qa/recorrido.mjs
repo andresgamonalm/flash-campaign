@@ -53,13 +53,13 @@ try {
   paso('Carga la pantalla de login', await pagina.locator('h1', { hasText: 'Entra a tu cuenta' }).isVisible())
   await captura('01-login')
 
-  await pagina.getByLabel('Correo').fill('hola@andresgamonal.com')
+  await pagina.getByLabel('Correo o usuario').fill('hola@andresgamonal.com')
   await pagina.getByLabel('Contraseña').fill('clave-incorrecta')
   await pagina.getByRole('button', { name: 'Entrar' }).click()
   await pagina.waitForSelector('.aviso--error', { timeout: 8000 })
   paso('Rechaza credenciales incorrectas con mensaje', true)
 
-  await pagina.getByLabel('Contraseña').fill('Matías1402')
+  await pagina.getByLabel('Contraseña').fill('Matias1402')
   await pagina.getByRole('button', { name: 'Entrar' }).click()
   await pagina.waitForURL(`${BASE}/`, { timeout: 10000 })
   paso('Entra con las credenciales del administrador', true)
@@ -70,6 +70,10 @@ try {
   await pagina.locator('.shell__nav').getByRole('link', { name: 'Crear campaña' }).click()
   await pagina.waitForURL('**/campanas/nueva')
   await pagina.getByLabel('Nombre de la campaña').fill('Zurich · Auto Digital 2 cuotas gratis')
+  // Las plataformas arrancan sin marcar: elegirlas es parte del flujo.
+  for (const plataforma of ['Google Search', 'Google Display', 'Meta']) {
+    await pagina.getByText(plataforma, { exact: false }).first().click()
+  }
   await pagina.getByRole('button', { name: 'Crear campaña', exact: false }).last().click()
   await pagina.waitForURL('**/search', { timeout: 10000 })
   paso('Crea la campaña y abre el creador de Search', true)
