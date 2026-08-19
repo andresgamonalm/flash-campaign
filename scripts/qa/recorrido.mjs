@@ -147,6 +147,22 @@ try {
       `${Math.round(cajaAntes.width)} → ${Math.round(cajaDespues.width)}`)
   }
 
+  // Deseleccionar tocando una zona vacía del lienzo. Se prueba porque el clic
+  // llega a la capa que cubre el lienzo, no al marco: comparar con el contenedor
+  // dejaba el elemento seleccionado para siempre.
+  {
+    const lienzo = await pagina.locator('.lienzo').first().boundingBox()
+    const activaAntes = await pagina.locator('.caja--activa').count()
+    await pagina.mouse.click(lienzo.x + lienzo.width - 6, lienzo.y + lienzo.height - 6)
+    await pagina.waitForTimeout(200)
+    const activaDespues = await pagina.locator('.caja--activa').count()
+    paso(
+      'Deselecciona tocando una zona vacía del lienzo',
+      activaAntes > 0 && activaDespues === 0,
+      `${activaAntes} → ${activaDespues} elementos activos`,
+    )
+  }
+
   // Guardar y replicar
   await pagina.getByRole('button', { name: 'Guardar', exact: true }).click()
   await pagina.waitForSelector('.tostada--exito', { timeout: 8000 })

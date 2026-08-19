@@ -206,7 +206,11 @@ export function Lienzo({
       ref={contenedor}
       style={{ width: banner.ancho * escala, height: banner.alto * escala }}
       onPointerDown={(ev) => {
-        if (ev.target === ev.currentTarget) onSeleccionar(null)
+        // Basta con que el toque no caiga sobre un elemento para deseleccionar.
+        // Comparar con el propio contenedor no servía: el lienzo está cubierto
+        // por el canvas y por la capa de cajas, así que el clic en una zona
+        // vacía nunca llegaba a tocar el marco y no se deseleccionaba nada.
+        if (!(ev.target as HTMLElement).closest('.caja')) onSeleccionar(null)
       }}
     >
       <canvas ref={canvas} className="lienzo__canvas" aria-label={`Vista del banner ${banner.ancho} por ${banner.alto}`} />
