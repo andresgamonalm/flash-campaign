@@ -46,6 +46,16 @@
           'error',
           function (evento) {
             var origen = evento.filename || (evento.target && (evento.target.src || evento.target.href)) || ''
+            // Caso concreto y fácil de confundir: el servidor está publicando el
+            // código sin compilar, así que el navegador pide un archivo que sólo
+            // existe durante el desarrollo.
+            if (origen.indexOf('/src/main.tsx') !== -1) {
+              mostrar(
+                'El sitio está publicando el código sin compilar. En Cloudflare Pages, el comando de compilación ' +
+                  'debe ser "npm run build" y el directorio de salida debe ser "dist".',
+              )
+              return
+            }
             mostrar('Detalle: ' + (evento.message || 'no se pudo cargar un archivo') + (origen ? ' · ' + origen : ''))
           },
           true,
