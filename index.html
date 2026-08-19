@@ -16,6 +16,52 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Si el aplicativo no alcanza a iniciarse, la pantalla no puede quedar en
+         blanco: tiene que decir qué pasó. Este bloque no depende de la hoja de
+         estilos ni del programa principal, justamente porque son los que pueden
+         estar fallando. -->
+    <div id="fallo-inicio" hidden style="font-family: Arial, Helvetica, sans-serif; max-width: 620px; margin: 12vh auto; padding: 24px; color: #353535">
+      <h1 style="font-size: 22px; color: #040764; margin: 0 0 12px">Flash Campaign no pudo abrirse</h1>
+      <p style="margin: 0 0 12px; line-height: 1.5">
+        El sitio cargó, pero el aplicativo no llegó a iniciarse. Recarga la página forzando la actualización
+        (Ctrl + Shift + R, o Cmd + Shift + R en Mac). Si vuelve a aparecer este mensaje, cópialo completo y envíalo
+        a quien mantiene el aplicativo.
+      </p>
+      <p id="fallo-detalle" style="margin: 0; padding: 12px; background: #F5F5F5; border-radius: 8px; font-size: 13px; word-break: break-word"></p>
+    </div>
+
+    <script>
+      (function () {
+        var mostrado = false
+        function mostrar(detalle) {
+          if (mostrado) return
+          mostrado = true
+          var bloque = document.getElementById('fallo-inicio')
+          var texto = document.getElementById('fallo-detalle')
+          if (texto) texto.textContent = detalle
+          if (bloque) bloque.hidden = false
+        }
+        window.addEventListener(
+          'error',
+          function (evento) {
+            var origen = evento.filename || (evento.target && (evento.target.src || evento.target.href)) || ''
+            mostrar('Detalle: ' + (evento.message || 'no se pudo cargar un archivo') + (origen ? ' · ' + origen : ''))
+          },
+          true,
+        )
+        window.addEventListener('unhandledrejection', function (evento) {
+          mostrar('Detalle: ' + ((evento.reason && evento.reason.message) || evento.reason || 'error desconocido'))
+        })
+        setTimeout(function () {
+          var raiz = document.getElementById('root')
+          if (raiz && raiz.children.length === 0) {
+            mostrar('Detalle: el programa principal no se ejecutó a los 8 segundos. Suele indicar que el archivo de código no llegó o llegó con el contenido equivocado.')
+          }
+        }, 8000)
+      })()
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
