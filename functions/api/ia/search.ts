@@ -1,4 +1,4 @@
-import { conSesion, cuerpoJson, error, json, type Env } from '../../_lib/entorno'
+import { conSesion, cuerpoJson, error, json, MODELOS_GEMINI, type Env } from '../../_lib/entorno'
 import { registrarEvento } from '../../_lib/historial'
 
 /**
@@ -10,7 +10,6 @@ import { registrarEvento } from '../../_lib/historial'
  * de Cloudflare y nunca se expone al navegador.
  */
 
-const MODELOS_ALTERNATIVOS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
 const LIMITE_TITULO = 30
 const LIMITE_DESCRIPCION = 90
 const LIMITE_RUTA = 15
@@ -238,7 +237,7 @@ function normalizar(resultado: Resultado): Resultado {
 
 async function llamarGemini(env: Env, prompt: string): Promise<{ datos: Resultado; modelo: string }> {
   const preferido = env.GEMINI_MODEL?.trim()
-  const modelos = preferido ? [preferido, ...MODELOS_ALTERNATIVOS.filter((m) => m !== preferido)] : MODELOS_ALTERNATIVOS
+  const modelos = preferido ? [preferido, ...MODELOS_GEMINI.filter((m) => m !== preferido)] : MODELOS_GEMINI
   let ultimoError = 'No se pudo contactar a Gemini.'
 
   for (const modelo of modelos) {

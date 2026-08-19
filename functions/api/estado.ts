@@ -6,7 +6,7 @@ import {
   nombreEnlaceKV,
   nombreEnlaceR2,
 } from '../_lib/almacen'
-import { json, sesionDe, type Env } from '../_lib/entorno'
+import { json, MODELOS_GEMINI, sesionDe, type Env } from '../_lib/entorno'
 import { ITERACIONES } from '../../shared/passwords'
 
 /** Diagnóstico de despliegue: qué está enlazado y qué falta configurar. */
@@ -14,7 +14,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const sesion = await sesionDe(request, env)
   return json({
     api: true,
-    version: '1.3.0',
+    version: '1.4.0',
     autenticado: Boolean(sesion),
     // Permite comprobar desde fuera qué versión del código está realmente
     // publicada: si `vueltas` no vale 12000, Cloudflare sigue sirviendo una
@@ -30,7 +30,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     },
     ia: {
       configurada: Boolean(env.GEMINI_API_KEY),
-      modelo: env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+      modelo: env.GEMINI_MODEL?.trim() || MODELOS_GEMINI[0],
     },
     secretoSesion: Boolean(env.SESSION_SECRET || env.JWT_SECRET),
     bibliotecaExterna: Boolean(nombreEnlaceR2(env) || env.MEDIA_MANIFEST_URL || env.MEDIA_BASE_URL),

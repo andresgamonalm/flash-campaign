@@ -45,6 +45,16 @@ export interface UsuarioAlmacenado {
 
 export const USUARIOS_SEMILLA = (semilla as { usuarios: UsuarioAlmacenado[] }).usuarios
 
+/**
+ * Modelos que prueba Char B, en orden de preferencia.
+ *
+ * Se recorre la lista hasta que uno responde: la clave de Gemini no está atada a
+ * una versión concreta, así que si un nombre no existe todavía para esta cuenta
+ * se pasa al siguiente sin dejar al usuario sin propuesta. La variable
+ * `GEMINI_MODEL` de Cloudflare tiene prioridad sobre esta lista.
+ */
+export const MODELOS_GEMINI = ['gemini-3.7-flash', 'gemini-3-flash', 'gemini-2.5-flash', 'gemini-2.0-flash']
+
 export function json(datos: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(datos), {
     ...init,
