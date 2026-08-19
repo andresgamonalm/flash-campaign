@@ -20,24 +20,38 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const clave = datos.clave ?? ''
   if (!email || !clave) return error('Escribe tu correo y tu contraseña para continuar.', 422)
 
-  const usuario = await buscarPorEmail(env, email)
   // Mismo mensaje para usuario inexistente y clave incorrecta: no se revela
   // qué correos existen en el aplicativo.
   const generico = 'El correo o la contraseña no coinciden.'
-  if (!usuario) return error(generico, 401)
-  if (!usuario.activo) return error('Tu cuenta está deshabilitada. Escribe al administrador.', 403)
-  if (!(await verificarHash(clave, usuario.hash))) return error(generico, 401)
+
+  let usuario
+  try {
+    usuario = await buscarPorEmail(env, email)
+    if (!usuario) return error(generico, 401)
+    if (!usuario.activo) return error('Tu cuenta está deshabilitada. Escribe al administrador.', 403)
+    if (!(await verificarHash(clave, usuario.hash))) return error(generico, 401)
+  } catch (e) {
+    // Un fallo del almacenamiento o del cifrado no puede quedar mudo: sin este
+    // mensaje el usuario sólo ve que "no funciona" y no hay forma de saber por qué.
+    return error(`No se pudo comprobar la contraseña. ${(e as Error).message}`, 500)
+  }
 
   const cookie = await crearCookieSesion(
     { uid: usuario.id, email: usuario.email, rol: usuario.rol },
     env,
     new URL(request.url),
   )
-  await registrarEvento(env, {
-    usuarioId: usuario.id,
-    usuarioEmail: usuario.email,
-    tipo: 'sesion_iniciada',
-    detalle: 'Inicio de sesión',
-  })
+  // El historial es un registro, no un requisito para entrar: si el almacenamiento
+  // falla, la sesión se abre igual.
+  try {
+    await registrarEvento(env, {
+      usuarioId: usuario.id,
+      usuarioEmail: usuario.email,
+      tipo: 'sesion_iniciada',
+      detalle: 'Inicio de sesión',
+    })
+  } catch {
+    /* se ignora a propósito */
+  }
   return json({ usuario: usuarioPublico(usuario) }, { headers: { 'set-cookie': cookie } })
 }

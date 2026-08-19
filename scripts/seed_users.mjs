@@ -2,7 +2,9 @@
 // La contraseña en claro nunca se escribe en el repositorio.
 import { writeFileSync } from 'node:fs'
 
-const ITERACIONES = 150_000
+// Debe coincidir con ITERACIONES en shared/passwords.ts: está ajustado al
+// presupuesto de CPU de Cloudflare (ver el comentario de ese archivo).
+const ITERACIONES = 12_000
 const b64 = (bytes) => Buffer.from(bytes).toString('base64')
 
 async function crearHash(clave) {

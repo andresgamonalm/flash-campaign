@@ -7,7 +7,26 @@
  * contraseña en claro.
  */
 
-const ITERACIONES = 150_000
+/**
+ * Vueltas de derivación.
+ *
+ * Cloudflare corta cada petición al agotar su presupuesto de CPU (10 ms por
+ * invocación en el plan gratuito). PBKDF2-SHA256 cuesta ~0,18 ms por cada 1.000
+ * vueltas, así que 150.000 vueltas consumían ~26 ms y mataban el inicio de
+ * sesión antes de que llegara a responder. 12.000 vueltas cuestan ~2 ms y dejan
+ * margen de sobra para el resto de la petición (consulta a D1, firma de la
+ * cookie y serialización).
+ */
+const ITERACIONES = 12_000
+
+/**
+ * Techo de seguridad al verificar. Un hash almacenado declara sus propias
+ * vueltas; si alguna vez se guardara uno más caro que esto, derivarlo agotaría
+ * la CPU y la petición moriría sin mensaje. Es preferible fallar explicando el
+ * motivo a devolver una pantalla en blanco.
+ */
+const TECHO_ITERACIONES = 40_000
+
 const LARGO_BYTES = 32
 
 function aBase64(bytes: Uint8Array): string {
@@ -51,6 +70,12 @@ export async function verificarHash(clave: string, almacenado: string): Promise<
   if (partes.length !== 4 || partes[0] !== 'pbkdf2') return false
   const iteraciones = Number(partes[1])
   if (!Number.isFinite(iteraciones) || iteraciones < 1000) return false
+  if (iteraciones > TECHO_ITERACIONES) {
+    throw new Error(
+      'La contraseña guardada usa un cifrado más caro del que admite el servidor. ' +
+        'Vuelve a generarla desde Configuración o con scripts/seed_users.mjs.',
+    )
+  }
   const sal = desdeBase64(partes[2])
   const esperado = desdeBase64(partes[3])
   const obtenido = await derivar(clave, sal, iteraciones)
