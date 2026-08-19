@@ -43,6 +43,25 @@ const MAXIMO_HTML = 80_000
 const MAXIMO_TEXTO = 12_000
 const TIEMPO_LECTURA_MS = 8000
 
+/**
+ * Presupuesto total de espera para consultar a Char B.
+ *
+ * Es un tope para toda la operación, no por modelo: con un límite por intento,
+ * tres modelos que agotan su espera suman el triple y la petición se pasa
+ * igualmente del corte de la plataforma. Cada intento recibe lo que quede.
+ */
+const TIEMPO_GEMINI_MS = 45_000
+/** Mínimo razonable para que valga la pena intentar con otro modelo. */
+const MINIMO_INTENTO_MS = 8_000
+/**
+ * Tope por intento.
+ *
+ * Sin él, un modelo que se cuelga consume el presupuesto entero y deja sin turno
+ * a los que sí habrían respondido: el usuario se queda sin propuesta por culpa
+ * del primero de la lista.
+ */
+const TIEMPO_POR_INTENTO_MS = 22_000
+
 const ENTIDADES: Record<string, string> = {
   '&nbsp;': ' ',
   '&amp;': '&',
@@ -281,27 +300,63 @@ async function llamarGemini(env: Env, prompt: string): Promise<{ datos: Resultad
   const preferido = env.GEMINI_MODEL?.trim()
   const modelos = preferido ? [preferido, ...MODELOS_GEMINI.filter((m) => m !== preferido)] : MODELOS_GEMINI
   let ultimoError = 'No se pudo contactar a Gemini.'
+  const limite = Date.now() + TIEMPO_GEMINI_MS
 
   for (const modelo of modelos) {
+    const restante = limite - Date.now()
+    if (restante < MINIMO_INTENTO_MS) {
+      ultimoError = `${ultimoError} No quedó tiempo para probar con ${modelo}.`
+      break
+    }
     const base = (env.GEMINI_BASE_URL ?? 'https://generativelanguage.googleapis.com').replace(/\/$/, '')
-    const respuesta = await fetch(
-      `${base}/v1beta/models/${modelo}:generateContent`,
-      {
+
+    /**
+     * Los modelos de la familia Gemini 3 razonan antes de responder, y ese
+     * razonamiento puede alargar la respuesta hasta más de lo que Cloudflare
+     * espera por una petición: la plataforma la corta y el navegador sólo ve un
+     * 502 sin texto. Aquí el trabajo de razonar ya lo hace la instrucción del
+     * sistema, así que se pide la respuesta directa.
+     */
+    const cuerpoPeticion = (conRazonamiento: boolean) =>
+      JSON.stringify({
+        systemInstruction: { parts: [{ text: INSTRUCCION }] },
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.65,
+          topP: 0.9,
+          maxOutputTokens: 8192,
+          responseMimeType: 'application/json',
+          responseSchema: ESQUEMA,
+          ...(conRazonamiento ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+        },
+      })
+
+    const pedir = (conRazonamiento: boolean) =>
+      fetch(`${base}/v1beta/models/${modelo}:generateContent`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY as string },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: INSTRUCCION }] },
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.65,
-            topP: 0.9,
-            maxOutputTokens: 8192,
-            responseMimeType: 'application/json',
-            responseSchema: ESQUEMA,
-          },
-        }),
-      },
-    )
+        body: cuerpoPeticion(conRazonamiento),
+        // Antes de que corte la plataforma, corta el aplicativo: así el usuario
+        // recibe una explicación en vez de una página de error ajena.
+        signal: AbortSignal.timeout(Math.max(MINIMO_INTENTO_MS, Math.min(TIEMPO_POR_INTENTO_MS, limite - Date.now()))),
+      })
+
+    let respuesta: Response
+    try {
+      respuesta = await pedir(false)
+      // No todas las versiones aceptan el ajuste de razonamiento. Si lo rechazan,
+      // se repite la llamada tal cual en vez de dar la generación por perdida.
+      if (respuesta.status === 400) {
+        const detalle = await respuesta.clone().text()
+        if (/thinking/i.test(detalle)) respuesta = await pedir(true)
+      }
+    } catch (e) {
+      ultimoError =
+        (e as Error)?.name === 'TimeoutError'
+          ? `El modelo ${modelo} agotó el tiempo de espera.`
+          : `No se pudo contactar a ${modelo}: ${(e as Error)?.message ?? 'error desconocido'}`
+      continue
+    }
 
     if (respuesta.status === 404) {
       ultimoError = `El modelo ${modelo} no está disponible para esta clave.`

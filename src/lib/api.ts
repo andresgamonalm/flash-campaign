@@ -41,10 +41,24 @@ async function pedir<T>(ruta: string, init: RequestInit = {}): Promise<T> {
   const tipo = respuesta.headers.get('content-type') ?? ''
   if (!tipo.includes('application/json')) {
     if (respuesta.ok) return undefined as T
+    if (respuesta.status === 404) {
+      throw new ErrorApi('El backend del aplicativo no está disponible en esta dirección.', 404)
+    }
+    // Cuando la plataforma corta la petición devuelve su propia página de error,
+    // no JSON. Esa página lleva el código exacto del motivo (1101 excepción,
+    // 1102 recursos agotados, 524 tiempo agotado…) y descartarlo dejaba en
+    // pantalla un número sin ninguna pista de qué hacer.
+    let pista = ''
+    try {
+      const cuerpo = await respuesta.text()
+      const codigo = /Error\s*(\d{3,4})/i.exec(cuerpo)?.[1]
+      const motivo = /<h2[^>]*>([^<]{4,120})<\/h2>/i.exec(cuerpo)?.[1]?.trim()
+      pista = [codigo ? `código ${codigo}` : '', motivo].filter(Boolean).join(' · ')
+    } catch {
+      /* si no se puede leer el cuerpo, se informa igual el estado */
+    }
     throw new ErrorApi(
-      respuesta.status === 404
-        ? 'El backend del aplicativo no está disponible en esta dirección.'
-        : `El servidor respondió ${respuesta.status}.`,
+      `El servidor respondió ${respuesta.status}.${pista ? ` ${pista}` : ''}`,
       respuesta.status,
     )
   }
