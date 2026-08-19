@@ -7,14 +7,19 @@ import {
   nombreEnlaceR2,
 } from '../_lib/almacen'
 import { json, sesionDe, type Env } from '../_lib/entorno'
+import { ITERACIONES } from '../../shared/passwords'
 
 /** Diagnóstico de despliegue: qué está enlazado y qué falta configurar. */
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const sesion = await sesionDe(request, env)
   return json({
     api: true,
-    version: '1.2.0',
+    version: '1.3.0',
     autenticado: Boolean(sesion),
+    // Permite comprobar desde fuera qué versión del código está realmente
+    // publicada: si `vueltas` no vale 12000, Cloudflare sigue sirviendo una
+    // compilación anterior y el inicio de sesión agotará la CPU.
+    cifrado: { vueltas: ITERACIONES },
     almacenamiento: {
       persistente: almacenamientoPersistente(env),
       datos: almacenamientoDatos(env),

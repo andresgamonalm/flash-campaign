@@ -60,6 +60,7 @@ export interface EstadoServicio {
   api: boolean
   version: string
   autenticado: boolean
+  cifrado?: { vueltas: number }
   almacenamiento: {
     persistente: boolean
     datos: 'd1' | 'kv' | 'memoria'

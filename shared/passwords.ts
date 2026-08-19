@@ -17,7 +17,7 @@
  * margen de sobra para el resto de la petición (consulta a D1, firma de la
  * cookie y serialización).
  */
-const ITERACIONES = 12_000
+export const ITERACIONES = 12_000
 
 /**
  * Techo de seguridad al verificar. Un hash almacenado declara sus propias
