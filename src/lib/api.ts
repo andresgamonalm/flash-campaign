@@ -62,8 +62,10 @@ export interface EstadoServicio {
   autenticado: boolean
   almacenamiento: {
     persistente: boolean
-    imagenes: 'r2' | 'kv' | 'memoria'
+    datos: 'd1' | 'kv' | 'memoria'
+    imagenes: 'r2' | 'kv' | 'd1' | 'memoria'
     /** Nombre real del enlace encontrado en Cloudflare, para poder verificarlo. */
+    enlaceD1: string | null
     enlaceKv: string | null
     enlaceR2: string | null
   }

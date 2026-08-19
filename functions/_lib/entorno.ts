@@ -3,15 +3,23 @@ import { COOKIE_SESION, DURACION_SESION_MS, firmarSesion, leerSesion } from '../
 import type { Sesion } from '../../shared/sesion'
 
 export interface Env {
-  /** Espacio KV donde persisten usuarios, marcas, proyectos e historial. */
+  /** Base de datos D1 donde persisten usuarios, marcas, proyectos e historial. */
+  DB?: D1Database
+  /** Alternativa a D1: espacio KV con el mismo propósito. */
   FLASH_KV?: KVNamespace
   /** Bucket R2 para la biblioteca de imágenes. */
+  IMAGENES?: R2Bucket
   MEDIA?: R2Bucket
-  /** Nombres alternativos si los enlaces de la cuenta ya existían con otro nombre. */
+  /** Nombres alternativos si los enlaces de la cuenta usan otra etiqueta. */
+  D1_BINDING?: string
   KV_BINDING?: string
   R2_BINDING?: string
   /** Secreto para firmar la cookie de sesión. */
   SESSION_SECRET?: string
+  /** Nombre que usa este proyecto en Cloudflare para el mismo secreto. */
+  JWT_SECRET?: string
+  /** Correo que debe tener rol de administrador. */
+  SUPER_ADMIN_EMAIL?: string
   /** Clave de la API de Google Gemini que usa el asistente Char B. */
   GEMINI_API_KEY?: string
   GEMINI_MODEL?: string
@@ -49,7 +57,9 @@ export function error(mensaje: string, status = 400, extra: Record<string, unkno
 }
 
 export function secretoSesion(env: Env): string {
-  if (env.SESSION_SECRET) return env.SESSION_SECRET
+  // El proyecto en Cloudflare guarda este secreto como JWT_SECRET.
+  const definido = env.SESSION_SECRET || env.JWT_SECRET
+  if (definido) return definido
   // Sin secreto configurado se deriva uno estable del hash del administrador.
   // Nunca sale del servidor y sobrevive a los reinicios porque el archivo semilla
   // vive en el repositorio, pero conviene definir SESSION_SECRET en Cloudflare.

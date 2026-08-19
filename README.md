@@ -42,14 +42,19 @@ node scripts/seed_users.mjs "<nueva-contraseña>"
 
 | Nombre | Tipo | Obligatorio | Para qué sirve |
 |---|---|---|---|
-| `FLASH_KV` | KV namespace | Sí | Usuarios, marcas, proyectos, historial y biblioteca |
-| `MEDIA` | Bucket R2 | Recomendado | Biblioteca de imágenes: catálogo existente y subidas |
-| `SESSION_SECRET` | Secreto | Recomendado | Firma de la cookie de sesión |
+| `DB` | Base de datos D1 | Sí | Usuarios, marcas, proyectos e historial |
+| `IMAGENES` | Bucket R2 | Recomendado | Biblioteca de imágenes: catálogo existente y subidas |
+| `JWT_SECRET` o `SESSION_SECRET` | Secreto | Recomendado | Firma de la cookie de sesión |
 | `GEMINI_API_KEY` | Secreto | Sí para Search | Clave de Google Gemini que usa Char B |
 | `GEMINI_MODEL` | Variable | No | Modelo a usar (por defecto `gemini-2.5-flash`) |
 | `MEDIA_BASE_URL` | Variable | No | Dominio público del bucket: si se define, la biblioteca sirve las imágenes desde ahí en vez de por la API |
 | `MEDIA_MANIFEST_URL` | Variable | No | Manifiesto JSON alternativo, sólo si el catálogo no vive en el bucket enlazado |
-| `KV_BINDING` / `R2_BINDING` | Variable | No | Nombre real del enlace, si en la cuenta ya existían con otro nombre distinto de `FLASH_KV` y `MEDIA` |
+| `D1_BINDING` / `R2_BINDING` / `KV_BINDING` | Variable | No | Nombre real del enlace, si usa una etiqueta distinta de las anteriores |
+
+Si en lugar de D1 se prefiere un espacio KV, el aplicativo también funciona con un
+enlace llamado `FLASH_KV`: se usa D1 cuando ambos están presentes. Las tablas de D1
+(`documentos` y `binarios`) se crean solas la primera vez, no hay que ejecutar
+ninguna migración.
 
 > El repositorio **no incluye `wrangler.toml` a propósito**. Cuando un proyecto de
 > Pages tiene ese archivo, Cloudflare toma su contenido como fuente de verdad e
@@ -57,10 +62,10 @@ node scripts/seed_users.mjs "<nueva-contraseña>"
 > vive en el panel, agregar un `wrangler.toml` dejaría el aplicativo sin KV, sin R2
 > y sin la clave de Gemini.
 
-Los enlaces se toman por su nombre. Si en la cuenta ya existían con otro nombre,
-basta con indicarlo en `KV_BINDING` o `R2_BINDING`. **Configuración → Estado del
-despliegue** muestra el nombre que el aplicativo encontró, para poder verificarlo
-sin salir de la pantalla.
+Los enlaces se toman por su nombre. Si usan otra etiqueta, basta con indicarlo en
+`D1_BINDING`, `R2_BINDING` o `KV_BINDING`. **Configuración → Estado del despliegue**
+muestra el nombre que el aplicativo encontró, para poder verificarlo sin salir de
+la pantalla.
 
 Con el bucket R2 enlazado, la biblioteca lista **directamente** las imágenes que ya
 estaban cargadas en él: no hace falta ningún manifiesto. Las carpetas del bucket se

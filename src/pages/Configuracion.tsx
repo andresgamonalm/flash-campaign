@@ -186,18 +186,20 @@ export function Configuracion() {
                 </thead>
                 <tbody>
                   <tr>
-                    <th scope="row">Almacenamiento de datos (KV)</th>
+                    <th scope="row">Almacenamiento de datos</th>
                     <td>
                       <span className={`chip ${estadoServicio.almacenamiento.persistente ? 'chip--exito' : 'chip--alerta'}`}>
-                        {estadoServicio.almacenamiento.persistente
-                          ? `Enlazado como ${estadoServicio.almacenamiento.enlaceKv}`
-                          : 'Sin enlazar'}
+                        {estadoServicio.almacenamiento.datos === 'd1'
+                          ? `Base D1 como ${estadoServicio.almacenamiento.enlaceD1}`
+                          : estadoServicio.almacenamiento.datos === 'kv'
+                            ? `Espacio KV como ${estadoServicio.almacenamiento.enlaceKv}`
+                            : 'Sin enlazar'}
                       </span>
                     </td>
                     <td>
                       {estadoServicio.almacenamiento.persistente
                         ? 'Proyectos, marcas, usuarios e historial se guardan de forma permanente.'
-                        : 'Los datos viven en memoria y se pierden al reiniciar. Enlaza un espacio KV llamado FLASH_KV.'}
+                        : 'Los datos viven en memoria y se pierden al reiniciar. Enlaza una base D1 como DB o un espacio KV como FLASH_KV.'}
                     </td>
                   </tr>
                   <tr>
@@ -205,16 +207,16 @@ export function Configuracion() {
                     <td>
                       <span className={`chip ${estadoServicio.almacenamiento.imagenes === 'memoria' ? 'chip--alerta' : 'chip--exito'}`}>
                         {estadoServicio.almacenamiento.imagenes === 'r2'
-                          ? `R2 como ${estadoServicio.almacenamiento.enlaceR2}`
+                          ? `Bucket R2 como ${estadoServicio.almacenamiento.enlaceR2}`
                           : estadoServicio.almacenamiento.imagenes.toUpperCase()}
                       </span>
                     </td>
                     <td>
                       {estadoServicio.almacenamiento.imagenes === 'r2'
                         ? 'Las subidas van al bucket R2 enlazado y el catálogo existente se lee directamente de él.'
-                        : estadoServicio.almacenamiento.imagenes === 'kv'
-                          ? 'Las subidas se guardan en KV. Enlaza un bucket R2 como MEDIA para archivos grandes.'
-                          : 'Las subidas no persisten. Enlaza R2 (MEDIA) o KV (FLASH_KV).'}
+                        : estadoServicio.almacenamiento.imagenes === 'memoria'
+                          ? 'Las subidas no persisten. Enlaza un bucket R2 como IMAGENES.'
+                          : 'Las subidas se guardan junto a los datos. Enlaza un bucket R2 como IMAGENES para archivos grandes.'}
                     </td>
                   </tr>
                   <tr>
@@ -239,8 +241,8 @@ export function Configuracion() {
                     </td>
                     <td>
                       {estadoServicio.secretoSesion
-                        ? 'La cookie de sesión se firma con SESSION_SECRET.'
-                        : 'Define SESSION_SECRET en Cloudflare para firmar las sesiones con un secreto propio.'}
+                        ? 'La cookie de sesión se firma con el secreto del proyecto (SESSION_SECRET o JWT_SECRET).'
+                        : 'Define SESSION_SECRET o JWT_SECRET en Cloudflare para firmar las sesiones con un secreto propio.'}
                     </td>
                   </tr>
                   <tr>
