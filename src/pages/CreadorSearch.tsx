@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Aviso, Boton, Campo, Cargando, EstadoVacio, Tabs, useAvisar } from '../components/ui'
 import { Icono } from '../components/Icono'
+import { SelloCharB } from '../components/SelloCharB'
 import { api, ErrorApi } from '../lib/api'
 import { useSesion } from '../lib/sesion'
 import { fecha } from '../lib/formato'
@@ -208,13 +209,7 @@ export function CreadorSearch() {
         <div className="cabecera-char-b">
           {/* Sello de Char B: identifica de un vistazo la sección que opera con
               el asistente, frente a las que son puramente manuales. */}
-          <img
-            className="sello-char-b"
-            src="/brand/flash-campaign/sello_char_b.svg"
-            alt="Char B, asistente de Google Search"
-            width={56}
-            height={56}
-          />
+          <SelloCharB />
           <div>
             <p className="migas">
               <Link to="/proyectos">Proyectos</Link> <Icono nombre="derecha" tamano={14} /> {proyecto.nombre}

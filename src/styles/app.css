@@ -427,6 +427,10 @@
   height: 56px;
   border-radius: 50%;
   display: block;
+  /* El retrato puede llegar en cualquier proporción desde la biblioteca:
+     se recorta al círculo en lugar de deformarse. */
+  object-fit: cover;
+  background: var(--g-blanco);
 }
 
 @media (max-width: 600px) {
