@@ -30,20 +30,60 @@ interface Brief {
   marca?: string
 }
 
+/**
+ * Tamaño máximo de HTML que se analiza por página.
+ *
+ * Cloudflare concede a cada petición un presupuesto de CPU muy corto, y recorrer
+ * con expresiones regulares el HTML completo de un sitio comercial (que ronda el
+ * megabyte) lo agota: la plataforma corta la petición y el navegador sólo ve un
+ * 502 sin explicación. Con los primeros 80 KB sobra: el título, la descripción y
+ * el contenido de portada viven ahí.
+ */
+const MAXIMO_HTML = 80_000
+const MAXIMO_TEXTO = 12_000
+const TIEMPO_LECTURA_MS = 8000
+
+const ENTIDADES: Record<string, string> = {
+  '&nbsp;': ' ',
+  '&amp;': '&',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&apos;': "'",
+  '&lt;': '<',
+  '&gt;': '>',
+}
+
 function limpiarHtml(html: string): string {
+  // Tres pasadas en vez de doce: cada recorrido del texto cuesta CPU y aquí es
+  // justo lo que escasea.
   return html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replace(/<(script|style|noscript)[\s\S]*?<\/\1>|<[^>]+>/gi, ' ')
+    .replace(/&(?:nbsp|amp|quot|#39|apos|lt|gt);/g, (e) => ENTIDADES[e] ?? ' ')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+/**
+ * Descarga como mucho `MAXIMO_HTML` caracteres y corta la conexión.
+ *
+ * Leer la respuesta entera para quedarse con el principio desperdicia tiempo y
+ * memoria, y con una página pesada basta para que la petición no termine nunca.
+ */
+async function leerParcial(respuesta: Response): Promise<string> {
+  if (!respuesta.body) return (await respuesta.text()).slice(0, MAXIMO_HTML)
+  const lector = respuesta.body.getReader()
+  const decodificador = new TextDecoder()
+  let acumulado = ''
+  try {
+    while (acumulado.length < MAXIMO_HTML) {
+      const { done, value } = await lector.read()
+      if (done) break
+      acumulado += decodificador.decode(value, { stream: true })
+    }
+  } finally {
+    await lector.cancel().catch(() => undefined)
+  }
+  return acumulado.slice(0, MAXIMO_HTML)
 }
 
 async function leerPagina(url: string): Promise<{ url: string; estado: string; texto: string; caracteres: number }> {
@@ -61,15 +101,17 @@ async function leerPagina(url: string): Promise<{ url: string; estado: string; t
     const respuesta = await fetch(destino.toString(), {
       headers: { 'user-agent': 'FlashCampaign/1.0 (+lector de briefing)', accept: 'text/html,*/*' },
       redirect: 'follow',
+      // Sin límite de espera, una página lenta deja colgada toda la generación.
+      signal: AbortSignal.timeout(TIEMPO_LECTURA_MS),
     })
     if (!respuesta.ok) {
       return { url, estado: `respondió ${respuesta.status}`, texto: '', caracteres: 0 }
     }
-    const html = await respuesta.text()
+    const html = await leerParcial(respuesta)
     const titulo = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1] ?? ''
     const descripcion =
       /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i.exec(html)?.[1] ?? ''
-    const texto = `TÍTULO: ${limpiarHtml(titulo)}\nDESCRIPCIÓN: ${limpiarHtml(descripcion)}\nCONTENIDO: ${limpiarHtml(html).slice(0, 12000)}`
+    const texto = `TÍTULO: ${limpiarHtml(titulo)}\nDESCRIPCIÓN: ${limpiarHtml(descripcion)}\nCONTENIDO: ${limpiarHtml(html).slice(0, MAXIMO_TEXTO)}`
     return { url, estado: 'leída', texto, caracteres: texto.length }
   } catch (e) {
     return { url, estado: `no se pudo leer (${(e as Error).message})`, texto: '', caracteres: 0 }
@@ -303,10 +345,13 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) =>
       )
     }
 
+    let paso = 'leer el briefing'
+    try {
     const brief = await cuerpoJson<Brief>(request)
     if (!brief.ganchoOferta?.trim()) return error('Escribe el gancho u oferta comercial.', 422)
     if (!brief.destinoCta?.trim()) return error('Indica el destino del CTA (la URL de la promoción).', 422)
 
+    paso = 'leer las páginas de la promoción'
     const paginas = await Promise.all(
       [brief.destinoCta, brief.urlReferencia1, brief.urlReferencia2]
         .filter((u): u is string => Boolean(u && u.trim()))
@@ -335,6 +380,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) =>
       .filter(Boolean)
       .join('\n')
 
+    paso = 'consultar a Char B'
     try {
       const { datos, modelo } = await llamarGemini(env, prompt)
       const resultado = {
@@ -353,5 +399,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) =>
       return json({ resultado })
     } catch (e) {
       return error((e as Error).message, 502)
+    }
+    } catch (e) {
+      // Un fallo aquí llegaba al navegador como un 502 sin texto y no había forma
+      // de saber en qué punto se rompió.
+      return error(`Falló al ${paso}: ${(e as Error)?.message ?? 'error desconocido'}`, 500)
     }
   })
