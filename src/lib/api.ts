@@ -70,6 +70,14 @@ async function pedir<T>(ruta: string, init: RequestInit = {}): Promise<T> {
   return datos as T
 }
 
+export interface ConsumoIa {
+  hoy: { generaciones: number; tokens: number }
+  mes: { generaciones: number; tokens: number }
+  total: { generaciones: number; tokens: number }
+  ultima: { creadoEn: string; tokens: number } | null
+  porUsuario: { email: string; generaciones: number; tokens: number }[]
+}
+
 export interface EstadoServicio {
   api: boolean
   version: string
@@ -163,6 +171,17 @@ export const api = {
 
   generarSearch: (brief: BriefSearch & { nombreCampana: string; marca?: string }) =>
     pedir<{ resultado: ResultadoSearch }>('/ia/search', { method: 'POST', body: JSON.stringify(brief) }),
+
+  consumoIa: () => pedir<ConsumoIa>('/ia/consumo'),
+
+  modelosIa: () =>
+    pedir<{
+      total: number
+      disponibles: string[]
+      cadenaDeCharB: string[]
+      seUsara: string | null
+      variableGeminiModel: string | null
+    }>('/ia/modelos'),
 }
 
 /** Mide una imagen antes de subirla para guardar sus dimensiones reales. */

@@ -451,3 +451,65 @@
     height: 44px;
   }
 }
+
+/* ------------------------------------------------ Consumo de Char B --- */
+
+.consumo {
+  background: var(--g-blanco);
+  border-radius: 8px;
+  padding: var(--e4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.consumo__cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--e3);
+  margin: 0;
+}
+
+.consumo__cifras dt {
+  font-size: var(--t-xs);
+  color: var(--txt-suave);
+}
+
+.consumo__cifras dd {
+  margin: 2px 0 0;
+  font-size: var(--t-lg);
+  font-weight: 600;
+  color: var(--g-azul);
+}
+
+.consumo__cifras dd span {
+  font-size: var(--t-xs);
+  font-weight: 400;
+  color: var(--txt-suave);
+}
+
+.consumo__cifras p {
+  margin: 0;
+  font-size: var(--t-xs);
+  color: var(--txt-suave);
+}
+
+/* Barra sólida sobre fondo sólido: sin degradados, como el resto del sistema. */
+.consumo__barra {
+  height: 8px;
+  border-radius: 8px;
+  background: var(--g-gris-claro);
+  overflow: hidden;
+}
+
+.consumo__barra span {
+  display: block;
+  height: 100%;
+  background: var(--g-turquesa);
+}
+
+.consumo__nota {
+  margin: 0;
+  font-size: var(--t-xs);
+  color: var(--txt-suave);
+}

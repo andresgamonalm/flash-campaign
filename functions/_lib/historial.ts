@@ -10,6 +10,8 @@ export interface EventoHistorial {
   tipo: string
   detalle: string
   formato?: string
+  /** Tokens que costó la llamada a Char B, cuando el evento es una generación. */
+  tokens?: number
   creadoEn: string
 }
 

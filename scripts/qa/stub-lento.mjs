@@ -48,10 +48,32 @@ createServer((peticion, respuesta) => {
   let cuerpo = ''
   peticion.on('data', (t) => (cuerpo += t))
   peticion.on('end', () => {
-    if (modelo.startsWith('gemini-3.7')) {
-      // Se cuelga: nunca contesta.
-      return
+    // Con TODOS_SIN_CUOTA=1 ninguna versión tiene crédito: es el caso que ve el
+    // usuario cuando de verdad se le acabó la cuota de Google.
+    if (process.env.TODOS_SIN_CUOTA === '1') {
+      respuesta.writeHead(429, { 'content-type': 'application/json' })
+      return respuesta.end(
+        JSON.stringify({
+          error: { code: 429, message: 'You exceeded your current quota', details: [{ retryDelay: '52s' }] },
+        }),
+      )
     }
+    // gemini-flash-latest: cuota agotada, como responde Google de verdad.
+    if (modelo === 'gemini-flash-latest') {
+      respuesta.writeHead(429, { 'content-type': 'application/json' })
+      return respuesta.end(
+        JSON.stringify({
+          error: {
+            code: 429,
+            message: 'You exceeded your current quota',
+            details: [{ '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: '37s' }],
+          },
+        }),
+      )
+    }
+    // gemini-pro-latest: se cuelga y nunca contesta.
+    if (modelo === 'gemini-pro-latest') return
+    // Modelo inexistente para esta cuenta.
     if (modelo.startsWith('gemini-3')) {
       respuesta.writeHead(404, { 'content-type': 'application/json' })
       return respuesta.end(JSON.stringify({ error: { message: 'model not found' } }))
@@ -59,4 +81,4 @@ createServer((peticion, respuesta) => {
     respuesta.writeHead(200, { 'content-type': 'application/json' })
     respuesta.end(JSON.stringify(RESPUESTA))
   })
-}).listen(8898, '127.0.0.1', () => console.log('doble lento en 8898'))
+}).listen(Number(process.env.PUERTO ?? 8898), '127.0.0.1', () => console.log('doble lento en 8898'))

@@ -165,6 +165,8 @@ export interface GrupoAnuncios {
 export interface ResultadoSearch {
   generadoEn: string
   modelo: string
+  /** Tokens que costó esta generación, según informa Google. */
+  consumo?: { entrada: number; salida: number; total: number }
   resumen: {
     producto: string
     propuestaValor: string
@@ -222,6 +224,8 @@ export interface EventoHistorial {
   tipo: TipoEvento
   detalle: string
   formato?: string
+  /** Tokens que costó la llamada a Char B, cuando el evento es una generación. */
+  tokens?: number
   creadoEn: string
 }
 

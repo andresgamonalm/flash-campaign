@@ -40,7 +40,16 @@ interface Brief {
  * el contenido de portada viven ahí.
  */
 const MAXIMO_HTML = 80_000
-const MAXIMO_TEXTO = 12_000
+/**
+ * Texto que se envía por página.
+ *
+ * El plan gratuito de Gemini no limita sólo el número de llamadas: también los
+ * tokens por minuto. Con tres páginas a 12.000 caracteres el encargo rondaba los
+ * 17.000 tokens por generación y se comía la cuota en pocos intentos. Con 6.000
+ * basta para entender producto, oferta y tono: lo que sobra son menús, pies de
+ * página y avisos de cookies.
+ */
+const MAXIMO_TEXTO = 6_000
 const TIEMPO_LECTURA_MS = 8000
 
 /**
@@ -313,7 +322,16 @@ function normalizar(resultado: Resultado): Resultado {
   }
 }
 
-async function llamarGemini(env: Env, prompt: string): Promise<{ datos: Resultado; modelo: string }> {
+interface Consumo {
+  entrada: number
+  salida: number
+  total: number
+}
+
+async function llamarGemini(
+  env: Env,
+  prompt: string,
+): Promise<{ datos: Resultado; modelo: string; consumo: Consumo }> {
   const preferido = env.GEMINI_MODEL?.trim()
   const modelos = preferido ? [preferido, ...MODELOS_GEMINI.filter((m) => m !== preferido)] : MODELOS_GEMINI
   let ultimoError = 'No se pudo contactar a Gemini.'
@@ -345,7 +363,7 @@ async function llamarGemini(env: Env, prompt: string): Promise<{ datos: Resultad
           topP: 0.9,
           // Razonar consume tokens de salida: si no se amplía el tope, el modelo
           // gasta el presupuesto pensando y devuelve vacío.
-          maxOutputTokens: razonar ? 24576 : 8192,
+          maxOutputTokens: razonar ? 18432 : 6144,
           responseMimeType: 'application/json',
           ...(esquema ? { responseSchema: ESQUEMA } : {}),
           thinkingConfig: { thinkingBudget: razonar ? -1 : 0 },
@@ -384,6 +402,16 @@ async function llamarGemini(env: Env, prompt: string): Promise<{ datos: Resultad
       ultimoError = `El modelo ${modelo} no está disponible para esta clave.`
       continue
     }
+    if (respuesta.status === 429) {
+      // La cuota gratuita de Gemini se cuenta por modelo, así que otro modelo de
+      // la cadena puede tener crédito aunque éste lo haya agotado.
+      const detalle = await respuesta.text()
+      const espera = /"?retryDelay"?\s*:\s*"?(\d+)s/.exec(detalle)?.[1]
+      ultimoError =
+        `Google agotó la cuota disponible para ${modelo}.` +
+        (espera ? ` Vuelve a intentarlo en ${espera} segundos.` : ' Suele reponerse sola al cabo de un minuto.')
+      continue
+    }
     if (!respuesta.ok) {
       const detalle = await respuesta.text()
       ultimoError = `Gemini respondió ${respuesta.status}: ${detalle.slice(0, 300)}`
@@ -395,6 +423,7 @@ async function llamarGemini(env: Env, prompt: string): Promise<{ datos: Resultad
     const cuerpo = (await respuesta.json()) as {
       candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[]
       promptFeedback?: { blockReason?: string }
+      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number }
     }
     if (cuerpo.promptFeedback?.blockReason) {
       throw new Error(`Gemini bloqueó la solicitud (${cuerpo.promptFeedback.blockReason}).`)
@@ -405,10 +434,26 @@ async function llamarGemini(env: Env, prompt: string): Promise<{ datos: Resultad
       continue
     }
     try {
-      return { datos: JSON.parse(texto) as Resultado, modelo }
+      // Gemini informa cuántos tokens costó la llamada. Se propaga para que el
+      // usuario pueda ver su consumo en vez de enterarse cuando se queda sin cuota.
+      const consumo = {
+        entrada: cuerpo.usageMetadata?.promptTokenCount ?? 0,
+        salida: cuerpo.usageMetadata?.candidatesTokenCount ?? 0,
+        total:
+          cuerpo.usageMetadata?.totalTokenCount ??
+          (cuerpo.usageMetadata?.promptTokenCount ?? 0) + (cuerpo.usageMetadata?.candidatesTokenCount ?? 0),
+      }
+      return { datos: JSON.parse(texto) as Resultado, modelo, consumo }
     } catch {
       ultimoError = 'Gemini devolvió un JSON que no se pudo interpretar.'
     }
+  }
+  if (/cuota/i.test(ultimoError)) {
+    throw new Error(
+      `${ultimoError} No es un fallo del aplicativo: es el límite de uso de tu clave de Google. ` +
+        'El plan gratuito se repone solo (por minuto y por día); para quitar el tope hay que activar la ' +
+        'facturación de la clave en Google AI Studio.',
+    )
   }
   throw new Error(ultimoError)
 }
@@ -460,11 +505,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) =>
 
     paso = 'consultar a Char B'
     try {
-      const { datos, modelo } = await llamarGemini(env, prompt)
+      const { datos, modelo, consumo } = await llamarGemini(env, prompt)
       const resultado = {
         ...normalizar(datos),
         generadoEn: new Date().toISOString(),
         modelo,
+        consumo,
         fuentesLeidas: paginas.map((p) => ({ url: p.url, estado: p.estado, caracteres: p.caracteres })),
       }
       await registrarEvento(env, {
@@ -472,7 +518,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) =>
         usuarioEmail: sesion.email,
         proyectoNombre: brief.nombreCampana,
         tipo: 'search_generado',
-        detalle: `Char B generó ${resultado.grupos.length} grupo(s) de anuncios con ${modelo}`,
+        detalle:
+          `Char B generó ${resultado.grupos.length} grupo(s) de anuncios con ${modelo}` +
+          (consumo.total ? ` · ${consumo.total.toLocaleString('es-CL')} tokens` : ''),
+        tokens: consumo.total || undefined,
       })
       return json({ resultado })
     } catch (e) {

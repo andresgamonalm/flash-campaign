@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Aviso, Boton, Campo, Cargando, EstadoVacio, Tabs, useAvisar } from '../components/ui'
 import { Icono } from '../components/Icono'
 import { SelloCharB } from '../components/SelloCharB'
+import { ConsumoCharB } from '../components/ConsumoCharB'
 import { api, ErrorApi } from '../lib/api'
 import { useSesion } from '../lib/sesion'
 import { fecha } from '../lib/formato'
@@ -363,6 +364,9 @@ export function CreadorSearch() {
         </form>
 
         <div className="seccion">
+          {/* El consumo se recalcula con cada propuesta nueva. */}
+          <ConsumoCharB marca={resultado?.generadoEn} />
+
           {!resultado ? (
             <div className="panel">
               <EstadoVacio

@@ -115,7 +115,16 @@ createServer((peticion, respuesta) => {
       console.log('[stub] prompt recibido:', prompt.length, 'caracteres · página leída:', prompt.includes('Auto Digital'))
       respuesta.writeHead(200, { 'content-type': 'application/json' })
       respuesta.end(
-        JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(RESPUESTA) }] } }] }),
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: JSON.stringify(RESPUESTA) }] } }],
+          // La API real informa el consumo aquí; el doble lo imita para poder
+          // comprobar el contador de tokens del aplicativo.
+          usageMetadata: {
+            promptTokenCount: Math.round(prompt.length / 4),
+            candidatesTokenCount: 1200,
+            totalTokenCount: Math.round(prompt.length / 4) + 1200,
+          },
+        }),
       )
     })
     return
