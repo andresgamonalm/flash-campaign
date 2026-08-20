@@ -163,6 +163,37 @@ try {
     )
   }
 
+  // Deshacer: se mueve un elemento y se comprueba que Ctrl+Z lo devuelve.
+  {
+    // Se reutiliza la misma caja que el resto de las pruebas: otras la solapan y
+    // un clic a ciegas sobre la primera se lo lleva el elemento de encima.
+    const cajaU = caja
+    await cajaU.click({ force: true })
+    const antesU = await cajaU.boundingBox()
+    await pagina.mouse.move(antesU.x + antesU.width / 2, antesU.y + antesU.height / 2)
+    await pagina.mouse.down()
+    await pagina.mouse.move(antesU.x + antesU.width / 2 + 80, antesU.y + antesU.height / 2 + 30, { steps: 10 })
+    await pagina.mouse.up()
+    await pagina.waitForTimeout(250)
+    const movidoU = await cajaU.boundingBox()
+    await pagina.keyboard.press('Control+z')
+    await pagina.waitForTimeout(350)
+    const desechoU = await cajaU.boundingBox()
+    paso(
+      'Ctrl+Z deshace el último movimiento',
+      Math.abs(movidoU.x - antesU.x) > 20 && Math.abs(desechoU.x - antesU.x) < 3,
+      `movido ${Math.round(movidoU.x - antesU.x)} px, tras deshacer ${Math.round(desechoU.x - antesU.x)} px`,
+    )
+    await pagina.keyboard.press('Control+Shift+z')
+    await pagina.waitForTimeout(350)
+    const rehechoU = await cajaU.boundingBox()
+    paso(
+      'Ctrl+Shift+Z rehace el movimiento',
+      Math.abs(rehechoU.x - movidoU.x) < 3,
+      `${Math.round(rehechoU.x - antesU.x)} px`,
+    )
+  }
+
   // Guardar y replicar
   await pagina.getByRole('button', { name: 'Guardar', exact: true }).click()
   await pagina.waitForSelector('.tostada--exito', { timeout: 8000 })

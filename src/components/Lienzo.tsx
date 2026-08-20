@@ -144,7 +144,15 @@ export function Lienzo({
         h = min
       }
 
-      onCambiar({ ...o, x: redondear(x), y: redondear(y), w: redondear(w), h: redondear(h) })
+      // Al agrandar por una esquina manteniendo la proporción, el contenido crece
+      // con la caja: el cuerpo del texto, el grosor del borde y el redondeo. Sin
+      // esto la caja crecía y el texto se quedaba igual, que es justo lo que se
+      // percibe como "no escala a proporción".
+      const proporcionalDeEsquina = actual.proporcional && MANIJAS_ESQUINA.includes(manija)
+      const factor = proporcionalDeEsquina ? w / Math.max(o.w, 1) : 1
+      const contenido = factor !== 1 ? escalarContenido(o, factor) : {}
+
+      onCambiar({ ...o, ...contenido, x: redondear(x), y: redondear(y), w: redondear(w), h: redondear(h) })
     },
     [banner.alto, banner.ancho, escala, onCambiar],
   )
@@ -255,6 +263,37 @@ export function Lienzo({
       </div>
     </div>
   )
+}
+
+/**
+ * Propiedades del contenido que deben crecer con la caja.
+ *
+ * Es lo mismo que hace la replicación al llevar el lienzo base a otro formato:
+ * un texto escalado no es sólo una caja más grande, es también una letra más
+ * grande. Se devuelven sólo los campos afectados para no tocar el resto.
+ */
+function escalarContenido(el: Elemento, factor: number): Record<string, unknown> {
+  switch (el.tipo) {
+    case 'texto':
+      return {
+        tamano: Math.max(7, Math.round(el.tamano * factor)),
+        radio: Math.round(el.radio * factor),
+        margen: {
+          arriba: el.margen.arriba * factor,
+          derecha: el.margen.derecha * factor,
+          abajo: el.margen.abajo * factor,
+          izquierda: el.margen.izquierda * factor,
+        },
+      }
+    case 'rectangulo':
+    case 'circulo':
+      return {
+        radio: Math.round(el.radio * factor),
+        grosorBorde: el.grosorBorde > 0 ? Math.max(1, Math.round(el.grosorBorde * factor)) : 0,
+      }
+    default:
+      return { radio: Math.round(el.radio * factor) }
+  }
 }
 
 function redondear(v: number) {

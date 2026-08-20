@@ -57,7 +57,7 @@ const proyectoId = await pagina.evaluate(
     await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: 'hola@andresgamonal.com', clave: 'Matías1402' }),
+      body: JSON.stringify({ email: 'andres', clave: 'Matias1402' }),
     })
     const formatos = [
       ['gd-300x250', 300, 250, true], ['gd-336x280', 336, 280], ['gd-250x250', 250, 250], ['gd-200x200', 200, 200],

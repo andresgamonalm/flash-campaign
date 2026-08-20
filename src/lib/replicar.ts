@@ -225,38 +225,90 @@ function agruparPorZona(elementos: Elemento[], bh: number): Zona[] {
     .map((z) => ({ elementos: z, bbox: unir(z.map(caja)) }))
 }
 
+/** ¿Este elemento forma parte del botón de llamada a la acción? */
+function esDelCta(el: Elemento): boolean {
+  return /cta/i.test(el.nombre) || Boolean(el.enlace?.url)
+}
+
+/**
+ * Agrupa los elementos por el papel que cumplen, no por dónde estaban en el
+ * lienzo base.
+ *
+ * Una pieza apaisada se lee en tres tiempos: quién lo dice (el logotipo), qué
+ * dice (el mensaje) y qué hay que hacer (el botón). Agrupar por la posición que
+ * ocupaban en un lienzo cuadrado repartía mal las franjas, porque en el cuadrado
+ * el orden es vertical y aquí es horizontal.
+ *
+ * Las zonas vacías no se crean: un banner sin logotipo reparte su ancho entre
+ * las dos que quedan en vez de dejar un hueco.
+ */
+function agruparPorPapel(elementos: Elemento[], bh: number): Zona[] {
+  const logo = elementos.filter((el) => el.tipo === 'logo')
+  const cta = elementos.filter((el) => el.tipo !== 'logo' && esDelCta(el))
+  const mensaje = elementos.filter((el) => el.tipo !== 'logo' && !esDelCta(el))
+
+  const grupos = [logo, mensaje, cta].filter((g) => g.length > 0)
+  // Sin logotipo ni botón reconocibles no hay tres tiempos que respetar: se
+  // vuelve al reparto por posición, que es mejor que inventar una jerarquía.
+  if (grupos.length < 2) return agruparPorZona(elementos, bh)
+  return grupos.map((g) => ({ elementos: g, bbox: unir(g.map(caja)) }))
+}
+
 function replicarBanda(elementos: Elemento[], bw: number, bh: number, tw: number, th: number): Elemento[] {
   const contenidos = elementos.filter((el) => !sangra(el, bw, bh))
   const decorativos = elementos.filter((el) => sangra(el, bw, bh))
   if (!contenidos.length) return replicarUniforme(elementos, bw, bh, tw, th)
 
-  const zonas = agruparPorZona(contenidos, bh)
+  const zonas = agruparPorPapel(contenidos, bh)
   const altoUtil = th - MARGEN_MIN * 2
   const anchoUtil = tw - MARGEN_MIN * 2
-
-  const altoMayor = Math.max(...zonas.map((z) => z.bbox.h), 1)
-  const anchoTotal = zonas.reduce((acc, z) => acc + z.bbox.w, 0) || 1
-  const separacion = 0.06 * anchoUtil
+  const separacion = 0.04 * anchoUtil
   const anchoDisponible = anchoUtil - separacion * (zonas.length - 1)
 
-  const s = Math.max(0.05, Math.min(altoUtil / altoMayor, anchoDisponible / anchoTotal, 4))
-
-  const anchoUsado = anchoTotal * s + separacion * (zonas.length - 1)
-  let cursor = MARGEN_MIN + Math.max(0, (anchoUtil - anchoUsado) / 2)
+  /**
+   * Reparto de una pieza horizontal.
+   *
+   * Un banner apaisado no se lee como un cuadrado estirado: se lee de izquierda a
+   * derecha en tres tiempos —quién lo dice, qué dice y qué hay que hacer—, y el
+   * del medio necesita más aire porque lleva el mensaje. De ahí el reparto
+   * 20 / 60 / 20, que es además la proporción con la que se diagramaron las
+   * referencias de la marca.
+   *
+   * Con dos zonas el mensaje sigue mandando; con una, ocupa todo.
+   */
+  const REPARTOS: Record<number, number[]> = { 1: [1], 2: [0.3, 0.7], 3: [0.2, 0.6, 0.2] }
+  const reparto = REPARTOS[zonas.length] ?? zonas.map(() => 1 / zonas.length)
 
   const resultado: Elemento[] = []
-  for (const zona of zonas) {
+  let cursor = MARGEN_MIN
+  zonas.forEach((zona, i) => {
+    const anchoZona = anchoDisponible * reparto[i]
+    /**
+     * Cada zona se escala dentro de su propio hueco, no con una escala común.
+     * Así el logotipo, que va solo en su franja, crece hasta llenarla en vez de
+     * quedar diminuto por culpa de la zona más grande de la pieza.
+     */
+    // El logotipo llena su franja: en una pieza apaisada es lo que identifica a la
+    // marca de un vistazo y encogerlo al tamaño del lienzo base lo vuelve ilegible.
+    const soloLogo = zona.elementos.every((el) => el.tipo === 'logo')
+    const techo = soloLogo ? 8 : 4
+    const s = Math.max(
+      0.05,
+      Math.min(anchoZona / Math.max(zona.bbox.w, 1), altoUtil / Math.max(zona.bbox.h, 1), techo),
+    )
     const zw = zona.bbox.w * s
     const zh = zona.bbox.h * s
+    // Centrado dentro de su franja, vertical y horizontalmente.
+    const zx = cursor + Math.max(0, (anchoZona - zw) / 2)
     const zy = MARGEN_MIN + (altoUtil - zh) / 2
     for (const el of zona.elementos) {
       const escalado = escalarElemento(el, s)
-      const x = cursor + (el.x - zona.bbox.x) * s
+      const x = zx + (el.x - zona.bbox.x) * s
       const y = zy + (el.y - zona.bbox.y) * s
       resultado.push(limitar({ ...escalado, x, y }, tw, th, true))
     }
-    cursor += zw + separacion
-  }
+    cursor += anchoZona + separacion
+  })
 
   // Los elementos que ya sangraban en la base siguen sangrando: son el recurso
   // gráfico de fondo. En una banda horizontal su tamaño lo manda el alto, que es

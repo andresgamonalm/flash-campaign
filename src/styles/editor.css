@@ -872,3 +872,41 @@
     padding: var(--e2);
   }
 }
+
+/* ------------------------------------- Barra de herramientas por grupos --- */
+
+/* Los botones se agrupan por el tipo de cosa que añaden. Una fila de siete
+   botones iguales obliga a leerlos todos; tres grupos con nombre se recorren
+   de un vistazo. */
+.editor__grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: var(--e3);
+  border-right: 1px solid var(--linea);
+}
+
+.editor__grupo:last-of-type {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.editor__grupo-titulo {
+  font-size: var(--t-xs);
+  color: var(--txt-suave);
+  text-transform: none;
+}
+
+.editor__grupo-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (max-width: 700px) {
+  .editor__grupo {
+    border-right: 0;
+    padding-right: 0;
+    width: 100%;
+  }
+}

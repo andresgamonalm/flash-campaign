@@ -27,6 +27,12 @@ const DESTINOS: Destino[] = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { usuario, esAdmin, salir, estadoServicio } = useSesion()
   const [abierto, setAbierto] = useState(false)
+  // La preferencia de menú plegado se recuerda: quien trabaja en el editor lo
+  // quiere plegado siempre, y volver a plegarlo en cada visita es un peaje.
+  const [plegado, setPlegado] = useState(() => localStorage.getItem('fc:menu-plegado') === '1')
+  useEffect(() => {
+    localStorage.setItem('fc:menu-plegado', plegado ? '1' : '0')
+  }, [plegado])
   const ubicacion = useLocation()
   const navegar = useNavigate()
 
@@ -46,7 +52,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         'Flash Campaign')
 
   return (
-    <div className={`shell${abierto ? ' shell--menu-abierto' : ''}`}>
+    <div
+      className={`shell${abierto ? ' shell--menu-abierto' : ''}${plegado ? ' shell--menu-plegado' : ''}`}
+    >
       <a className="saltar-al-contenido" href="#contenido">
         Saltar al contenido
       </a>
@@ -63,12 +71,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               to={d.ruta}
               end={d.exacta}
               className={({ isActive }) => `shell__enlace${isActive ? ' shell__enlace--activo' : ''}`}
+              title={d.nombre}
             >
               <Icono nombre={d.icono} tamano={20} />
-              <span>{d.nombre}</span>
+              <span className="shell__enlace-texto">{d.nombre}</span>
             </NavLink>
           ))}
         </nav>
+
+        {/* Plegar el menú deja el ancho completo para el lienzo del editor, que
+            es donde de verdad hace falta el espacio. */}
+        <button
+          type="button"
+          className="shell__plegar"
+          onClick={() => setPlegado((v) => !v)}
+          aria-pressed={plegado}
+          title={plegado ? 'Mostrar el menú' : 'Ocultar el menú para ganar espacio'}
+        >
+          <Icono nombre={plegado ? 'expandir' : 'contraer'} tamano={18} />
+          <span className="shell__enlace-texto">Ocultar menú</span>
+        </button>
 
         <div className="shell__pie">
           <p className="shell__endoso">Pensado y creado por</p>

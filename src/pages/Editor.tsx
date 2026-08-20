@@ -23,6 +23,7 @@ import {
   replicarDiseno,
 } from '../lib/diseno'
 import { descargar, exportarBanners } from '../lib/exportar'
+import { useDeshacer } from '../lib/historialEdicion'
 import type { Banner, DisenoProyecto, Elemento, Marca, Proyecto } from '../lib/types'
 
 type DestinoImagen = 'fondo' | 'elemento' | 'nuevo-elemento' | 'logo'
@@ -50,6 +51,11 @@ export function Editor() {
   const [modalExport, setModalExport] = useState(false)
 
   const contenedorLienzo = useRef<HTMLDivElement>(null)
+  const pasos = useDeshacer<DisenoProyecto>()
+  // Referencias vivas para el manejador de teclado, que se suscribe una vez.
+  const pasosRef = useRef(pasos)
+  pasosRef.current = pasos
+  const aplicarPasoRef = useRef<(estado: DisenoProyecto | null) => void>(() => {})
 
   useEffect(() => {
     let vivo = true
@@ -61,6 +67,7 @@ export function Editor() {
         setProyecto(p)
         setMarca(marcas.find((m) => m.id === p.marcaId) ?? null)
         setDiseno(p.diseno ?? null)
+        if (p.diseno) pasos.reiniciar(p.diseno)
       } catch (e) {
         if (vivo) setError((e as Error).message)
       }
@@ -106,10 +113,30 @@ export function Editor() {
    */
   useEffect(() => {
     function alPulsar(evento: KeyboardEvent) {
-      if (evento.key !== 'Delete' && evento.key !== 'Backspace' && evento.key !== 'Escape') return
       const foco = document.activeElement as HTMLElement | null
       const etiqueta = foco?.tagName
-      if (etiqueta === 'INPUT' || etiqueta === 'TEXTAREA' || etiqueta === 'SELECT' || foco?.isContentEditable) return
+      const escribiendo =
+        etiqueta === 'INPUT' || etiqueta === 'TEXTAREA' || etiqueta === 'SELECT' || Boolean(foco?.isContentEditable)
+
+      // Deshacer y rehacer, con las combinaciones de siempre en Windows y en Mac.
+      // Mientras se escribe en un campo mandan las del navegador, que deshacen el
+      // texto: sería desconcertante que Ctrl+Z revirtiera el diseño entero.
+      if ((evento.ctrlKey || evento.metaKey) && !escribiendo) {
+        const tecla = evento.key.toLowerCase()
+        if (tecla === 'z' && !evento.shiftKey) {
+          evento.preventDefault()
+          aplicarPasoRef.current(pasosRef.current.deshacer())
+          return
+        }
+        if ((tecla === 'z' && evento.shiftKey) || tecla === 'y') {
+          evento.preventDefault()
+          aplicarPasoRef.current(pasosRef.current.rehacer())
+          return
+        }
+      }
+
+      if (evento.key !== 'Delete' && evento.key !== 'Backspace' && evento.key !== 'Escape') return
+      if (escribiendo) return
       if (evento.key === 'Escape') {
         setSeleccionadoId(null)
         return
@@ -131,11 +158,13 @@ export function Editor() {
             ? { ...b, ...cambios, ajustadoManualmente: b.base ? false : marcarManual || b.ajustadoManualmente }
             : b,
         )
-        return { ...previo, banners }
+        const siguiente = { ...previo, banners }
+        pasos.registrar(siguiente)
+        return siguiente
       })
       setCambiosSinGuardar(true)
     },
-    [indice],
+    [indice, pasos],
   )
 
   const cambiarElemento = useCallback(
@@ -156,6 +185,29 @@ export function Editor() {
     },
     [indice],
   )
+
+  /**
+   * Un arrastre son cientos de cambios seguidos; registrar cada uno llenaría el
+   * historial de pasos de un píxel. Se registra al soltar, que es cuando el
+   * usuario da la acción por terminada.
+   */
+  const cerrarGesto = useCallback(() => {
+    setDiseno((previo) => {
+      if (previo) pasos.registrar(previo)
+      return previo
+    })
+  }, [pasos])
+
+  const aplicarPaso = useCallback(
+    (estado: DisenoProyecto | null) => {
+      if (!estado) return
+      setDiseno(estado)
+      setCambiosSinGuardar(true)
+      setSeleccionadoId(null)
+    },
+    [],
+  )
+  aplicarPasoRef.current = aplicarPaso
 
   function anadirElemento(nuevos: Elemento | Elemento[]) {
     if (!banner) return
@@ -337,6 +389,28 @@ export function Editor() {
           </p>
         </div>
         <div className="editor__acciones">
+          {/* Deshacer y rehacer a la vista: el atajo de teclado no basta si no
+              hay nada en pantalla que diga que la acción existe. */}
+          <Boton
+            variante="terciario"
+            icono="deshacer"
+            pequeno
+            className="btn--icono"
+            aria-label="Deshacer (Ctrl+Z)"
+            title="Deshacer · Ctrl+Z"
+            disabled={!pasos.puedeDeshacer}
+            onClick={() => aplicarPaso(pasos.deshacer())}
+          />
+          <Boton
+            variante="terciario"
+            icono="rehacer"
+            pequeno
+            className="btn--icono"
+            aria-label="Rehacer (Ctrl+Shift+Z)"
+            title="Rehacer · Ctrl+Shift+Z"
+            disabled={!pasos.puedeRehacer}
+            onClick={() => aplicarPaso(pasos.rehacer())}
+          />
           {proyecto.canales.includes('search') ? (
             <Boton variante="secundario" icono="buscar" pequeno onClick={() => navegar(`/campanas/${proyecto.id}/search`)}>
               Search
@@ -438,30 +512,58 @@ export function Editor() {
           </ul>
         </aside>
 
-        <section className={`editor__lienzo${panelMovil === 'lienzo' ? ' editor__panel--visible' : ''}`} ref={contenedorLienzo}>
+        <section
+          className={`editor__lienzo${panelMovil === 'lienzo' ? ' editor__panel--visible' : ''}`}
+          ref={contenedorLienzo}
+          // Pulsar en cualquier zona libre de la columna del lienzo deselecciona.
+          // Antes sólo servía el interior del banner, así que quien pinchaba en el
+          // margen gris se quedaba con el elemento seleccionado sin saber por qué.
+          onPointerDown={(ev) => {
+            const destino = ev.target as HTMLElement
+            if (!destino.closest('.caja') && !destino.closest('.editor__herramientas')) setSeleccionadoId(null)
+          }}
+        >
           <div className="editor__herramientas">
-            <span className="editor__herramientas-titulo">Añadir</span>
-            <Boton variante="secundario" pequeno icono="texto" onClick={() => anadirElemento(crearTexto(banner, marca))}>
-              Texto
-            </Boton>
-            <Boton variante="secundario" pequeno icono="rectangulo" onClick={() => anadirElemento(crearRectangulo(banner, marca))}>
-              Rectángulo
-            </Boton>
-            <Boton variante="secundario" pequeno icono="cuadrado" onClick={() => anadirElemento(crearCuadrado(banner, marca))}>
-              Cuadrado
-            </Boton>
-            <Boton variante="secundario" pequeno icono="circulo" onClick={() => anadirElemento(crearCirculo(banner, marca))}>
-              Círculo
-            </Boton>
-            <Boton variante="secundario" pequeno icono="imagen" onClick={() => setSelectorImagen('nuevo-elemento')}>
-              Imagen
-            </Boton>
-            <Boton variante="secundario" pequeno icono="logo" onClick={() => setSelectorImagen('logo')}>
-              Logo
-            </Boton>
-            <Boton variante="secundario" pequeno icono="enlace" onClick={() => anadirElemento(crearCta(banner, marca))}>
-              Botón CTA
-            </Boton>
+            {/* Tres grupos con nombre en vez de siete botones en fila: se busca por
+                el tipo de cosa que se quiere añadir, no leyendo todo el listado. */}
+            <div className="editor__grupo">
+              <span className="editor__grupo-titulo">Texto</span>
+              <div className="editor__grupo-botones">
+                <Boton variante="secundario" pequeno icono="texto" onClick={() => anadirElemento(crearTexto(banner, marca))}>
+                  Texto
+                </Boton>
+                <Boton variante="secundario" pequeno icono="enlace" onClick={() => anadirElemento(crearCta(banner, marca))}>
+                  Botón CTA
+                </Boton>
+              </div>
+            </div>
+
+            <div className="editor__grupo">
+              <span className="editor__grupo-titulo">Formas</span>
+              <div className="editor__grupo-botones">
+                <Boton variante="secundario" pequeno icono="rectangulo" onClick={() => anadirElemento(crearRectangulo(banner, marca))}>
+                  Rectángulo
+                </Boton>
+                <Boton variante="secundario" pequeno icono="cuadrado" onClick={() => anadirElemento(crearCuadrado(banner, marca))}>
+                  Cuadrado
+                </Boton>
+                <Boton variante="secundario" pequeno icono="circulo" onClick={() => anadirElemento(crearCirculo(banner, marca))}>
+                  Círculo
+                </Boton>
+              </div>
+            </div>
+
+            <div className="editor__grupo">
+              <span className="editor__grupo-titulo">Imágenes</span>
+              <div className="editor__grupo-botones">
+                <Boton variante="secundario" pequeno icono="imagen" onClick={() => setSelectorImagen('nuevo-elemento')}>
+                  Foto
+                </Boton>
+                <Boton variante="secundario" pequeno icono="logo" onClick={() => setSelectorImagen('logo')}>
+                  Logo
+                </Boton>
+              </div>
+            </div>
 
             {marca?.logos.length ? (
               <div className="editor__logos-marca">
@@ -495,6 +597,7 @@ export function Editor() {
               seleccionadoId={seleccionadoId}
               onSeleccionar={setSeleccionadoId}
               onCambiar={cambiarElemento}
+              onFinDeGesto={cerrarGesto}
             />
 
             <div className="editor__zoom">

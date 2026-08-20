@@ -513,3 +513,71 @@
   font-size: var(--t-xs);
   color: var(--txt-suave);
 }
+
+/* --------------------------------------------------- Menú lateral plegado --- */
+
+/* Plegado, el menú deja sólo los iconos y devuelve unos 200 px al contenido.
+   Es la diferencia entre editar un banner cómodo y editarlo apretado. */
+.shell--menu-plegado {
+  grid-template-columns: 64px minmax(0, 1fr);
+}
+
+.shell--menu-plegado .shell__enlace-texto,
+.shell--menu-plegado .shell__endoso,
+.shell--menu-plegado .logo-endoso {
+  display: none;
+}
+
+.shell--menu-plegado .shell__enlace,
+.shell--menu-plegado .shell__plegar {
+  justify-content: center;
+}
+
+.shell--menu-plegado .shell__marca img {
+  height: 26px;
+  object-fit: contain;
+  object-position: left center;
+  width: 40px;
+}
+
+.shell__plegar {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  width: 100%;
+  /* 24 px de alto mínimo para el toque, como el resto de los controles. */
+  min-height: 40px;
+  padding: 0 var(--e2);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--g-blanco);
+  font: inherit;
+  font-size: var(--t-sm);
+  cursor: pointer;
+  margin-top: auto;
+}
+
+.shell__plegar:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.shell__plegar:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+/* En móvil el menú es un cajón que se abre encima: plegarlo no aplica. */
+@media (max-width: 900px) {
+  .shell--menu-plegado {
+    grid-template-columns: 1fr;
+  }
+  .shell__plegar {
+    display: none;
+  }
+  .shell--menu-plegado .shell__enlace-texto,
+  .shell--menu-plegado .shell__endoso,
+  .shell--menu-plegado .logo-endoso {
+    display: revert;
+  }
+}
