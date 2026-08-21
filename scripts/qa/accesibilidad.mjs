@@ -131,8 +131,8 @@ async function auditar(ruta) {
 
 await auditar('/login')
 
-await pagina.fill('input[type=email]', 'hola@andresgamonal.com')
-await pagina.fill('input[type=password]', 'Matías1402')
+await pagina.fill('input[name=email]', 'andres')
+await pagina.fill('input[type=password]', 'Matias1402')
 await pagina.click('button[type=submit]')
 await pagina.waitForURL(`${BASE}/`)
 

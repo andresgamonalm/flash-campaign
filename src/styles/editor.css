@@ -269,8 +269,8 @@
 }
 
 .muestra {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 6px;
   border: 1px solid var(--borde-campo);
   cursor: pointer;
@@ -378,7 +378,7 @@
 
 .editor__cuerpo {
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr) 320px;
+  grid-template-columns: 200px minmax(0, 1fr) 352px;
   gap: var(--e3);
   align-items: start;
 }
@@ -388,7 +388,7 @@
   background: var(--g-blanco);
   border-radius: var(--radio);
   padding: var(--e3);
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - var(--topbar-h) - var(--e5));
   overflow-y: auto;
   position: sticky;
   top: calc(var(--topbar-h) + var(--e3));
@@ -909,4 +909,72 @@
     padding-right: 0;
     width: 100%;
   }
+}
+
+/* ------------------------------------------------- Secciones plegables --- */
+
+.plegable {
+  border-top: 1px solid var(--linea);
+  padding-top: var(--e3);
+}
+
+.plegable__titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2);
+  /* 40 px de alto: el título es el control que abre y cierra, y tiene que
+     poder pulsarse con el dedo sin apuntar. */
+  min-height: 40px;
+  cursor: pointer;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--g-azul);
+  list-style: none;
+}
+
+.plegable__titulo::-webkit-details-marker {
+  display: none;
+}
+
+.plegable__titulo:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* La flecha apunta hacia abajo cerrada y hacia arriba abierta: dice en qué
+   dirección va a moverse el contenido. */
+.plegable[open] > .plegable__titulo svg {
+  transform: rotate(180deg);
+}
+
+.plegable__titulo svg {
+  flex: none;
+  color: var(--txt-suave);
+  transition: transform 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plegable__titulo svg {
+    transition: none;
+  }
+}
+
+.plegable__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  padding: var(--e2) 0 var(--e3);
+}
+
+/* Dentro de un plegable las secciones ya no necesitan su propio marco. */
+.plegable__cuerpo .inspector__grupo {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.plegable__cuerpo .inspector__grupo h3 {
+  display: none;
 }

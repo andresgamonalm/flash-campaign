@@ -353,3 +353,33 @@ export function useConfirmacion() {
 
   return useMemo(() => ({ confirmar, dialogo }), [confirmar, dialogo])
 }
+
+/**
+ * Sección plegable.
+ *
+ * Un panel de propiedades con todo abierto obliga a recorrer una columna larga
+ * para llegar a lo de siempre. Plegando lo que se consulta de vez en cuando
+ * —coordenadas, enlace, fondo— lo frecuente queda a la vista sin desplazarse.
+ *
+ * Se usa `details`/`summary` del navegador: recuerda el estado abierto,
+ * funciona con teclado y lo anuncian los lectores de pantalla sin código extra.
+ */
+export function Plegable({
+  titulo,
+  abierto = false,
+  children,
+}: {
+  titulo: string
+  abierto?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <details className="plegable" open={abierto}>
+      <summary className="plegable__titulo">
+        <span>{titulo}</span>
+        <Icono nombre="abajo" tamano={16} />
+      </summary>
+      <div className="plegable__cuerpo">{children}</div>
+    </details>
+  )
+}
